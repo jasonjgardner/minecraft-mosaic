@@ -1,0 +1,10 @@
+node_modules/
+build/
+dist/
+.env
+!.env.example
+*.log
+dist/
+deploy/
+input/
+cache/
