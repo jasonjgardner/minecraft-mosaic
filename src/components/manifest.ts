@@ -1,5 +1,6 @@
 import type { PackIDs } from "../types.d.ts";
 import {
+  BASE_GAME_VERSION as base_game_version,
   DEFAULT_BUILD_VERSION,
   DEFAULT_LICENSE,
   TARGET_VERSION as min_engine_version,

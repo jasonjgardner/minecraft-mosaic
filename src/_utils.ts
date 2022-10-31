@@ -1,4 +1,11 @@
-import type { ChannelValue, PaletteInput, RGB, RGBA, UUID } from "./types.d.ts";
+import type {
+  ChannelValue,
+  PaletteInput,
+  RGB,
+  RGBA,
+  SemverVector,
+  UUID,
+} from "./types.d.ts";
 import { DEFAULT_NAMESPACE } from "./constants.ts";
 import { decode } from "https://deno.land/std@0.140.0/encoding/base64.ts";
 import { GIF, Image } from "imagescript/mod.ts";
@@ -147,8 +154,12 @@ export async function handlePaletteInput(src: Exclude<PaletteInput, null>) {
  * @param ver Semantic version number
  * @returns Version number values as an array
  */
-export function semverVector(ver: string): number[] {
-  return ver.split(".", 3).map((v: string) => parseInt(v, 10));
+export function semverVector(ver: string): SemverVector {
+  const vers = ver.split(".", 3).map((v: string) => parseInt(v, 10));
+
+  vers.length = 3;
+
+  return <SemverVector> vers;
 }
 
 /**
@@ -206,6 +217,10 @@ export function rgbaMatch(
         Math.min(255, Math.max(0, fuzziness[idx]))
     )
   );
+}
+
+export function isSemverVector(value: number[]): value is SemverVector {
+  return value.length === 3 && value.every((v) => v >= 0 && v < 10000);
 }
 
 export function isUUID(value: string): value is UUID {

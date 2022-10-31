@@ -12,6 +12,8 @@ import { join } from "path/mod.ts";
 import { JSZip } from "jszip/mod.ts";
 import { Image } from "imagescript/mod.ts";
 import { calculateMipLevels } from "./_resize.ts";
+import { renderBlock, renderBorderSvg } from "./render.ts";
+import { hex2rgb } from "../_utils.ts";
 
 const zip = new JSZip();
 const rp = zip.folder("rp");
@@ -74,32 +76,49 @@ export async function requireMaterialAsset(name: string, size: PackSizes) {
   }
 }
 
+async function addColorTexture(
+  { resourceId, textureSet: { color } }: BlockEntry,
+  size: PackSizes,
+) {
+  const textureName = sanitizeFilename(`${resourceId}.png`);
+  texturesDirectory.addFile(
+    textureName,
+    await renderBlock(typeof color === "string" ? hex2rgb(color) : color, size),
+  );
+
+  return textureName.replace(".png", "");
+}
+
 export async function addTextureSet(block: BlockEntry, size: PackSizes) {
+  const textureSet = { ...block.textureSet };
   const isColor = (color: string | number[]) =>
     `${color}`[0] === "#" || Array.isArray(color);
 
-  if (!isColor(block.textureSet.color)) {
-    await requireMaterialAsset(`${block.textureSet.color}`, size);
+  if (isColor(textureSet.color)) {
+    // Render and rewrite color texture
+    textureSet.color = await addColorTexture(block, size);
+  } else {
+    await requireMaterialAsset(`${textureSet.color}`, size);
   }
 
-  if (!isColor(block.textureSet.metalness_emissive_roughness || "")) {
+  if (!isColor(textureSet.metalness_emissive_roughness || "")) {
     await requireMaterialAsset(
-      `${block.textureSet.metalness_emissive_roughness}`,
+      `${textureSet.metalness_emissive_roughness}`,
       size,
     );
   }
 
-  if (block.textureSet.normal) {
-    await requireMaterialAsset(block.textureSet.normal, size);
-  } else if (block.textureSet.heightmap) {
-    await requireMaterialAsset(block.textureSet.heightmap, size);
+  if (textureSet.normal) {
+    await requireMaterialAsset(textureSet.normal, size);
+  } else if (textureSet.heightmap) {
+    await requireMaterialAsset(textureSet.heightmap, size);
   }
 
   return texturesDirectory.addFile(
     sanitizeFilename(`${block.resourceId}.texture_set.json`),
     JSON.stringify({
       format_version: "1.16.100",
-      "minecraft:texture_set": block.textureSet,
+      "minecraft:texture_set": textureSet,
     }),
   );
 }

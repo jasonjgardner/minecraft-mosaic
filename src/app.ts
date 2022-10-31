@@ -30,10 +30,10 @@ router
       "content-disposition",
       'attachment; filename="generated.mcaddon"',
     );
-    context.response.type = "application/zip";
+    context.response.type = "application/octet-stream";
     context.response.body = new Uint8Array(await blob.arrayBuffer());
 
-    return await next();
+    return next();
   })
   .post(
     "/download",
@@ -56,13 +56,15 @@ router
           animationAlignment: <Alignment> data.fields.alignment ?? "e2e",
         }, data.fields.materials ?? DEFAULT_MATERIAL_ID);
 
+        const responseData =  new Uint8Array(await blob.arrayBuffer());
+
         context.response.status = 200;
         context.response.headers.set(
           "content-disposition",
           `attachment; filename="${namespace}.mcaddon"`,
         );
-        context.response.type = "application/zip";
-        context.response.body = new Uint8Array(await blob.arrayBuffer());
+        context.response.type = "application/octet-stream";
+        context.response.body = responseData;
       }
     },
   );
@@ -87,7 +89,7 @@ app.use(function usePageNotFoundRoute(context) {
 });
 
 app.addEventListener("listen", () => {
-  console.log("Server is online, 8000 is the magic port 🌈!");
+  console.log("🌈 http://localhost:8000 🪄");
 });
 
 await app.listen({ port: 8000 });

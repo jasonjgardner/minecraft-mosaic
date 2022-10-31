@@ -2,7 +2,7 @@ import type { ReleaseType } from "semver/mod.ts";
 import { PackSizes } from "./types.d.ts";
 
 export const MIN_PACK_SIZE: PackSizes = 16;
-export const MAX_PACK_SIZE: PackSizes = 1024;
+export const MAX_PACK_SIZE: PackSizes = 256;
 
 export const DEFAULT_PACK_SIZE: PackSizes = MIN_PACK_SIZE;
 
@@ -10,8 +10,10 @@ export const DEFAULT_LICENSE = "GPL-3.0-or-later";
 
 export const DEFAULT_BUILD_VERSION = "1.0.0";
 export const DEFAULT_DESCRIPTION = "Block palette generated from image input";
-export const DEFAULT_NAMESPACE = "razzmatazz"; // TODO: Create namespace hash function
-export const BEHAVIOR_BLOCK_FORMAT_VERSION = "1.16.100";
+export const DEFAULT_NAMESPACE = "art"; // TODO: Create namespace hash function
+export const BEHAVIOR_BLOCK_FORMAT_VERSION = "1.19.20";
+
+export const TEXTURE_SET_FORMAT_VERSION = "1.16.100";
 
 export const BLOCK_ENGINE_VERSION = 17825806;
 
@@ -66,7 +68,9 @@ export const TRANSPARENT_PRINT_BLOCK = "minecraft:air";
 
 export const TRANSPARENT_PRINT_BLOCK_THRESHOLD = 0.5;
 
-export const TARGET_VERSION: [number, number, number] = [1, 18, 3];
+export const TARGET_VERSION: [number, number, number] = [1, 19, 2];
+
+export const BASE_GAME_VERSION: [number, number, number] = TARGET_VERSION;
 
 /**
  * Pack icon font file
@@ -96,3 +100,6 @@ export const COMPRESSION_LEVEL = 0;
 export const SUPPORTED_EXTENSIONS = ["jpg", "jpeg", "gif", "png"];
 
 export const DEFAULT_MATERIAL_ID = "plastic";
+
+export const RUNNING_LOCALLY = !Deno.env.get("DENO_DEPLOYMENT_ID") &&
+  !Deno.env.get("GITHUB_ACTIONS");

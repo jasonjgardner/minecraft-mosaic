@@ -195,13 +195,6 @@ export default class BlockEntry {
     return deepMerge(
       {
         "minecraft:material_instances": this.materialInstances,
-        "minecraft:destroy_time": 1,
-        "minecraft:explosion_resistance": 5,
-        "minecraft:friction": 0.6,
-        "minecraft:flammable": {
-          flame_odds: 0,
-          burn_odds: 0,
-        },
       },
       deepMerge(this._hue.components, this._material.components),
     );

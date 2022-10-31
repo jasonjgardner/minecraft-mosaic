@@ -29,6 +29,37 @@ interface PrinterResult {
   func: string;
 }
 
+type NbtData = { [key: string]: number | boolean | string };
+
+type Coordinates = [number, number, number];
+
+interface BlockPaletteData {
+  version: number;
+  name: string;
+  states: NbtData;
+}
+
+interface IMinecraftStructure {
+  format_version: 1;
+  size: Coordinates;
+  structure_world_origin: Coordinates;
+
+  structure: {
+    block_indices: Array<Coordinates>;
+    entities?: Array<{ [k: string]: string | number }>;
+    palette: {
+      [k: string]: {
+        block_palette?: [BlockPaletteData[], NbtData[] | undefined];
+        block_position_data: {
+          [idx: number]: {
+            block_entity_data: NbtData;
+          };
+        };
+      };
+    };
+  };
+}
+
 function colorDistance(color1: RGB, color2: RGB) {
   return Math.sqrt(
     Math.pow(color1[0] - color2[0], 2) +
@@ -80,37 +111,6 @@ function writeFill(
   return `fill ${position} ${position} ${
     fillWith ?? TRANSPARENT_PRINT_BLOCK
   } 0 keep`;
-}
-
-type NbtData = { [key: string]: number | boolean | string };
-
-type Coordinates = [number, number, number];
-
-interface BlockPaletteData {
-  version: number;
-  name: string;
-  states: NbtData;
-}
-
-interface IMinecraftStructure {
-  format_version: 1;
-  size: Coordinates;
-  structure_world_origin: Coordinates;
-
-  structure: {
-    block_indices: Array<Coordinates>;
-    entities?: Array<{ [k: string]: string | number }>;
-    palette: {
-      [k: string]: {
-        block_palette?: [BlockPaletteData[], NbtData[] | undefined];
-        block_position_data: {
-          [idx: number]: {
-            block_entity_data: NbtData;
-          };
-        };
-      };
-    };
-  };
 }
 
 export function constructDecoded(

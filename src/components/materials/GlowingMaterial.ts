@@ -28,14 +28,14 @@ export default class Glowing extends Material {
 
   get components() {
     return {
-      "minecraft:creative_category": {
-        category: "construction",
-        group: "itemGroup.name.stainedClay",
-      },
+      // "minecraft:creative_category": {
+      //   category: "construction",
+      //   group: "itemGroup.name.stainedClay",
+      // },
       //"minecraft:unit_cube": Object.freeze({}),
       "minecraft:material_instances": this.materialInstance,
       //"minecraft:block_light_filter":
-      "minecraft:block_light_emission": 1,
+      //"minecraft:light_emission": 6,
     };
   }
 }

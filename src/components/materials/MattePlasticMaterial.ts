@@ -25,14 +25,14 @@ export default class MattePlastic extends Material {
 
   get components() {
     return {
-      "minecraft:creative_category": {
-        category: "construction",
-        group: "itemGroup.name.concrete",
-      },
+      // "minecraft:creative_category": {
+      //   category: "construction",
+      //   group: "itemGroup.name.concrete",
+      // },
       //"minecraft:unit_cube": Object.freeze({}),
       "minecraft:material_instances": this.materialInstance,
       //"minecraft:block_light_filter":
-      "minecraft:block_light_emission": 0,
+      //"minecraft:block_light_emission": 0,
     };
   }
 }

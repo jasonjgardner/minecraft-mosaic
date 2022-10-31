@@ -28,7 +28,7 @@ export default class HueBlock {
   }
 
   get name() {
-    return this.title(labelLanguage).replaceAll(/\s+/g, "_");
+    return this.title(labelLanguage).trim().replaceAll(/\s+/g, "_");
   }
 
   get hex() {
@@ -41,14 +41,18 @@ export default class HueBlock {
 
   get textureSet() {
     return {
-      color: formatAhex(this._color),
+      color: this._color,
     };
   }
 
   get components(): MinecraftData {
     return {
       //...formatTag(this.name),
-      "minecraft:map_color": this.hex,
+      "minecraft:map_color": "#" +
+        hexValue(this._color).replace("#", "").substring(
+          0,
+          6,
+        ),
     };
   }
 }

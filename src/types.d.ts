@@ -1,5 +1,5 @@
-import type Material from "/src/components/Material.ts";
-import type HueBlock from "/src/components/blocks/HueBlock.ts";
+import type Material from "./components/Material.ts";
+import type HueBlock from "./components/blocks/HueBlock.ts";
 
 export type ChannelValue = number;
 
@@ -7,7 +7,7 @@ export type RGB = [ChannelValue, ChannelValue, ChannelValue];
 
 export type RGBA = [ChannelValue, ChannelValue, ChannelValue, ChannelValue];
 
-export type PackSizes = 16 | 32 | 64 | 128 | 256 | 512 | 1024;
+export type PackSizes = 16 | 32 | 64 | 128 | 256;
 
 export type LanguageId = "en_US" | "en_GB"; // TODO: Add more languages
 
@@ -20,6 +20,8 @@ export type Axis = "x" | "y" | "z";
 export type UUID = string;
 
 export type PackIDs = [UUID, UUID, UUID, UUID];
+
+export type SemverVector = [number, number, number];
 
 export interface TextureSet {
   heightmap?: string;
@@ -53,7 +55,11 @@ export type MinecraftTerrainData = {
   };
 };
 
-export type MinecraftRecordTypes = boolean | string | number;
+export type MinecraftRecordTypes =
+  | boolean
+  | string
+  | number
+  | Array<MinecraftRecordTypes>;
 
 export type MinecraftData = {
   [key: string]: MinecraftData | MinecraftRecordTypes;
