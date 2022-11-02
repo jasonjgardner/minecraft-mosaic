@@ -35,27 +35,40 @@ export async function getSlices(
   size: number,
 ): Promise<ImageBlock[]> {
   const input = await handlePaletteInput(src);
-  const frame = (input instanceof GIF ? input[0] : input);
 
-  const { width, height } = frame;
+  // TODO: For each frame, offset z index
+
+  const frames = (input instanceof GIF ? input : [input]);
+
   const slices: Array<ImageBlock> = [];
 
-  for (let xItr = 0; xItr < width; xItr += size) {
-    for (let yItr = 0; yItr < height; yItr += size) {
-      const frameTexture = frame.clone().crop(xItr, yItr, size, size);
+  let zItr = 0;
+  frames.forEach((frame) => {
+    const { width, height } = frame;
 
-      const block = new ImageBlock(
-        frameTexture,
-        [xItr, yItr],
-        {
-          en_US: `Slice ${xItr} ${yItr}`,
-          en_GB: `Slice ${xItr},${yItr}`,
-        },
-      );
+    let positionXitr = 0;
+    let positionYitr = 0;
 
-      slices.push(block);
+    for (let xItr = 0; xItr < width; xItr += size) {
+      for (let yItr = 0; yItr < height; yItr += size) {
+        const frameTexture = frame.clone().crop(xItr, yItr, size, size);
+
+        slices.push(
+          new ImageBlock(
+            frameTexture,
+            [positionXitr, positionYitr, zItr],
+            {
+              en_US: `X${positionXitr} Y${positionYitr} Z${zItr}`,
+              en_GB: `X${positionXitr} Y${positionYitr} Zed${zItr}`,
+            },
+          ),
+        );
+        positionYitr++;
+      }
+      positionXitr++;
     }
-  }
+    zItr++;
+  });
 
   return slices;
 }

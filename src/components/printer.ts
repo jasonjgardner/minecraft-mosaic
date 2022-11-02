@@ -11,8 +11,9 @@ import {
   MIN_PALETTE_LENGTH,
 } from "../constants.ts";
 import BlockEntry from "./BlockEntry.ts";
-import { pixelPrinter } from "./ImagePrinter.ts";
+import { pixelPrinter, positionPrinter } from "./ImagePrinter.ts";
 import { fetchImage, handlePaletteInput } from "../_utils.ts";
+import { ImageBlock } from "./blocks/index.ts";
 
 async function githubAvatars(
   owner: string,
@@ -158,12 +159,12 @@ export function printPixelArtDirectory(res: BlockEntry[]) {
 }
 
 export default async function printer(
-  res: BlockEntry[],
+  palette: BlockEntry[],
   artSrc?: PaletteInput,
   alignment?: Alignment,
   artSrcId?: string,
 ) {
-  if (res.length < MIN_PALETTE_LENGTH) {
+  if (palette.length < MIN_PALETTE_LENGTH) {
     throw Error("Can not print pixel art. Palette source is too small.");
   }
 
@@ -174,17 +175,19 @@ export default async function printer(
     try {
       const img = await handlePaletteInput(artSrc);
 
-      //constructDecoded(name, Array.isArray(img) ? img : [img], res);
+      //constructDecoded(name, Array.isArray(img) ? img : [img], palette);
 
       const chunks = Math.min(
         MAX_PRINT_CHUNKS,
         Math.max(1, Math.max(img.width, img.height) / CHUNK_SIZE),
       );
 
-      pixelPrinter(name, img, res, {
+      pixelPrinter(name, img, palette, {
         alignment: alignment ?? "b2b",
         chunks,
       });
+
+      positionPrinter(`${name}_position`, palette);
     } catch (err) {
       console.log("Failed printing pixel art from input: %s", err);
     }

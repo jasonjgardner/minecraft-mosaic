@@ -6,7 +6,7 @@ import type {
   PackSizes,
 } from "../types.d.ts";
 import type BlockEntry from "./BlockEntry.ts";
-import { COMPRESSION_LEVEL } from "../constants.ts";
+import { COMPRESSION_LEVEL, TEXTURE_SET_FORMAT_VERSION } from "../constants.ts";
 import { EOL } from "fs/mod.ts";
 import { join } from "path/mod.ts";
 import { JSZip } from "jszip/mod.ts";
@@ -132,7 +132,7 @@ export async function addTextureSet(block: BlockEntry, size: PackSizes) {
   return texturesDirectory.addFile(
     sanitizeFilename(`${block.resourceId}.texture_set.json`),
     JSON.stringify({
-      format_version: "1.16.100",
+      format_version: TEXTURE_SET_FORMAT_VERSION,
       "minecraft:texture_set": textureSet,
     }),
   );

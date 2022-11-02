@@ -1,4 +1,5 @@
 import type {
+  Axis,
   IBlockTexture,
   LanguageId,
   MinecraftData,
@@ -9,7 +10,7 @@ import { Frame, Image } from "imagescript/mod.ts";
 import { labelLanguage } from "../BlockEntry.ts";
 import { hexValue } from "../../_utils.ts";
 
-type Coordinates = [number, number];
+type Coordinates = [number, number, number?];
 
 let sliceId = 0;
 
@@ -19,7 +20,7 @@ export default class ImageBlock implements IBlockTexture {
 
   _color!: RGBA;
 
-  _position!: [number, number];
+  _position!: Coordinates;
   constructor(
     img: Image | Frame,
     position?: Coordinates,
@@ -32,16 +33,29 @@ export default class ImageBlock implements IBlockTexture {
       en_GB: `Slice ${sliceId}`,
     };
 
-    this._color = <RGBA> Image.colorToRGBA(img.averageColor());
+    this._color = <RGBA> Image.colorToRGBA(img.dominantColor());
 
     this._position = <Coordinates> position?.slice(
       0,
-      2,
-    ) ?? [0, 0];
+      3,
+    ) ?? [0, 0, 0];
   }
 
   title(lang: LanguageId = "en_US") {
     return this._name[lang];
+  }
+
+  orientation(axis: Axis) {
+    if (axis === "y") {
+      // When going north to south, x and z are swapped
+      return [this.position[2], this.position[1], this.position[0]];
+    }
+    if (axis === "z") {
+      return [this.position[0], this.position[2], this.position[1]];
+    }
+
+    // When going east to west, x, y and z remain the same
+    return this.position;
   }
 
   get name() {

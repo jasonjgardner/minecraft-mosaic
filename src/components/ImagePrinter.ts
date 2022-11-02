@@ -19,6 +19,7 @@ import {
 import BlockEntry from "./BlockEntry.ts";
 import { addToBehaviorPack, addToResourcePack } from "./_state.ts";
 import { rgbaMatch } from "../_utils.ts";
+import { HueBlock, ImageBlock } from "./blocks/index.ts";
 
 const axises: [Axis, Axis, Axis] = ["x", "y", "z"];
 const DIR_FUNCTIONS = `functions/${FUNCTIONS_NAMESPACE}`;
@@ -225,6 +226,10 @@ export function pixelPrinter(
   const groupFn: Array<PrinterResult[]> = [];
   const alignGroup = options.alignment || "b2b";
 
+  const blockPalette = palette.filter(({ textureSet: { color } }) =>
+    color instanceof HueBlock
+  );
+
   for (let itr = 0; itr < frameCount; itr++) {
     const frame = frames[itr];
     let dest = DIR_FUNCTIONS;
@@ -234,11 +239,12 @@ export function pixelPrinter(
       fileName = sprintf("%s_%02s", name, `${idx}`);
       dest += `/${name}`;
     }
+
     try {
       const res = printDecoded(
         fileName,
         frame,
-        palette,
+        blockPalette,
         getAlignment(alignGroup, {
           idx,
           frame,
@@ -296,4 +302,33 @@ function createParentFunction(
       fns[materialPositionKey].join(EOL.CRLF),
     );
   }
+}
+
+export function positionPrinter(name: string, palette: BlockEntry[]) {
+  const blockPalette = palette.filter(({ color }) =>
+    color instanceof ImageBlock
+  );
+
+  const fns: PrinterResult[] = [];
+
+  axises.forEach((axis) => {
+    blockPalette.forEach((block) => {
+      if (!(block.color instanceof ImageBlock)) {
+        return;
+      }
+
+      const [x, y, z] = block.color.orientation(axis);
+
+      fns.push({
+        axis,
+        label: block.id,
+        func: writeFill(x ?? 0, y ?? 0, z ?? 0, block.behaviorId, axis),
+      });
+    });
+
+    addToBehaviorPack(
+      `${DIR_FUNCTIONS}/${name}_${axis}.mcfunction`,
+      fns.map(({ func }) => func).join(EOL.CRLF),
+    );
+  });
 }
