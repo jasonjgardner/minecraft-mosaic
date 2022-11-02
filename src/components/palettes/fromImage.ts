@@ -36,8 +36,6 @@ export async function getSlices(
 ): Promise<ImageBlock[]> {
   const input = await handlePaletteInput(src);
 
-  // TODO: For each frame, offset z index
-
   const frames = (input instanceof GIF ? input : [input]);
 
   const slices: Array<ImageBlock> = [];
@@ -47,9 +45,8 @@ export async function getSlices(
     const { width, height } = frame;
 
     let positionXitr = 0;
-    let positionYitr = 0;
-
     for (let xItr = 0; xItr < width; xItr += size) {
+      let positionYitr = 0;
       for (let yItr = 0; yItr < height; yItr += size) {
         const frameTexture = frame.clone().crop(xItr, yItr, size, size);
 
@@ -63,6 +60,7 @@ export async function getSlices(
             },
           ),
         );
+
         positionYitr++;
       }
       positionXitr++;

@@ -309,9 +309,8 @@ export function positionPrinter(name: string, palette: BlockEntry[]) {
     color instanceof ImageBlock
   );
 
-  const fns: PrinterResult[] = [];
-
   axises.forEach((axis) => {
+    const fns: PrinterResult[] = [];
     blockPalette.forEach((block) => {
       if (!(block.color instanceof ImageBlock)) {
         return;
@@ -322,7 +321,8 @@ export function positionPrinter(name: string, palette: BlockEntry[]) {
       fns.push({
         axis,
         label: block.id,
-        func: writeFill(x ?? 0, y ?? 0, z ?? 0, block.behaviorId, axis),
+        func:
+          `fill ~${x} ~-${y} ~${z} ~${x} ~-${y} ~${z} ${block.behaviorId} 0 keep`,
       });
     });
 
