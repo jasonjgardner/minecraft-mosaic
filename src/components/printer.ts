@@ -170,15 +170,18 @@ export default async function printer(
   const tasks: Promise<void>[] = [];
 
   if (artSrc) {
+    const name = (artSrcId ?? ART_SOURCE_ID).replace(/\s+/g, "_");
     try {
       const img = await handlePaletteInput(artSrc);
+
+      //constructDecoded(name, Array.isArray(img) ? img : [img], res);
 
       const chunks = Math.min(
         MAX_PRINT_CHUNKS,
         Math.max(1, Math.max(img.width, img.height) / CHUNK_SIZE),
       );
 
-      pixelPrinter((artSrcId ?? ART_SOURCE_ID).replace(/\s+/g, "_"), img, res, {
+      pixelPrinter(name, img, res, {
         alignment: alignment ?? "b2b",
         chunks,
       });

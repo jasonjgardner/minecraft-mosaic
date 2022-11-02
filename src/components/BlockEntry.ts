@@ -1,5 +1,6 @@
 import type {
   BlockComponents,
+  IBlockTexture,
   IPermutation,
   LanguageId,
   MinecraftData,
@@ -17,6 +18,7 @@ import { deepMerge } from "collections/mod.ts";
 import { sanitizeNamespace } from "../_utils.ts";
 import HueBlock from "./blocks/HueBlock.ts";
 import Material from "./Material.ts";
+import ImageBlock from "./blocks/ImageBlock.ts";
 
 export const labelLanguage: LanguageId = "en_US";
 
@@ -24,14 +26,18 @@ export default class BlockEntry {
   _namespace!: string;
   _id!: string;
 
-  _hue!: HueBlock;
+  _hue!: IBlockTexture;
 
   _material!: Material;
 
   _permutations?: IPermutation[];
 
   _printable?: boolean;
-  constructor(namespace: string, block: HueBlock, material: Material) {
+  constructor(
+    namespace: string,
+    block: IBlockTexture,
+    material: Material,
+  ) {
     this.namespace = namespace;
     this._hue = block;
     this._material = material;
@@ -95,7 +101,10 @@ export default class BlockEntry {
   }
 
   get textureSet(): TextureSet {
-    return deepMerge(this._hue.textureSet, this._material.textureSet);
+    return <TextureSet> deepMerge(
+      this._hue.textureSet,
+      this._material.textureSet,
+    );
   }
 
   get blocksData() {

@@ -1,15 +1,17 @@
 import type {
+  IBlockTexture,
   LanguageId,
   MinecraftData,
   MultiLingual,
   RGB,
   RGBA,
+  TextureSet,
 } from "../../types.d.ts";
-import { formatAhex, hexValue } from "../../_utils.ts";
+import { hexValue } from "../../_utils.ts";
 
 import { labelLanguage } from "../BlockEntry.ts";
 
-export default class HueBlock {
+export default class HueBlock implements IBlockTexture {
   _color!: RGBA;
   _name?: MultiLingual;
   constructor(color: RGB | RGBA, name?: MultiLingual) {
@@ -39,7 +41,7 @@ export default class HueBlock {
     return this._color;
   }
 
-  get textureSet() {
+  get textureSet(): TextureSet {
     return {
       color: this._color,
     };

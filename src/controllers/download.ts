@@ -2,7 +2,7 @@ import type { CreationParameters } from "../types.d.ts";
 import type Material from "../components/Material.ts";
 import { DEFAULT_NAMESPACE, DEFAULT_PACK_SIZE } from "../constants.ts";
 import { sanitizeNamespace } from "../_utils.ts";
-import getPalette from "../components/palettes/fromImage.ts";
+import { getPalette, getSlices } from "../components/palettes/fromImage.ts";
 import materialPalette from "../components/palettes/materialDesign.ts";
 import PlasticMaterial from "../components/materials/PlasticMaterial.ts";
 import GlowingMaterial from "../components/materials/GlowingMaterial.ts";
@@ -31,12 +31,23 @@ function materialFactory(materialIds: string[]): Material[] {
   return res;
 }
 
+function getBlockPalette(pixelArtSource?: string, slices?: number) {
+  if (!pixelArtSource) {
+    return materialPalette;
+  }
+
+  return slices
+    ? getSlices(pixelArtSource, slices)
+    : getPalette(pixelArtSource);
+}
+
 export default async function download({
   pixelArtSource,
   pixelArtSourceName,
   namespace,
   size,
   animationAlignment,
+  slices,
 }: CreationParameters, materialIds?: string) {
   const ns = sanitizeNamespace(
     namespace ?? pixelArtSource ?? DEFAULT_NAMESPACE,
@@ -51,14 +62,17 @@ export default async function download({
     materialOptions.push(new PlasticMaterial());
   }
 
-  let blockColors = materialPalette;
+  let blocks = materialPalette;
 
-  if (pixelArtSource) {
-    try {
-      blockColors = await getPalette(pixelArtSource);
-    } catch (err) {
-      console.log("Failed extracting color palette: %s", err);
+  try {
+    if (pixelArtSource) {
+      blocks = await getBlockPalette(
+        pixelArtSource,
+        slices,
+      );
     }
+  } catch (err) {
+    console.log("Failed extracting color palette: %s", err);
   }
 
   return createAddon([
@@ -71,7 +85,7 @@ export default async function download({
     size: size || DEFAULT_PACK_SIZE,
     pixelArtSource,
     pixelArtSourceName,
-    blockColors,
+    blocks,
     materialOptions,
     animationAlignment,
   });

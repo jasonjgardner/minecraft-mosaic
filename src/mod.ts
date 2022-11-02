@@ -1,9 +1,9 @@
 import "dotenv/load.ts";
 
-import type { CreationParameters, PackIDs } from "./types.d.ts";
+import type { CreationParameters, IBlockTexture, PackIDs } from "./types.d.ts";
 import { DEFAULT_DESCRIPTION } from "./constants.ts";
 import BlockEntry from "./components/BlockEntry.ts";
-import { getBlocks, HueBlock } from "./components/blocks/index.ts";
+import { getBlocks, HueBlock, ImageBlock } from "./components/blocks/index.ts";
 import Material from "./components/Material.ts";
 import { getMaterials } from "./components/materials/index.ts";
 //import createFunctions from "/src/components/mcfunctions/index.ts";
@@ -20,43 +20,49 @@ import {
 // Join base textures with PBR materials
 function compileMaterials(
   namespace: string,
-  baseTextures: HueBlock[],
+  baseTextures: IBlockTexture[],
   materials: Material[],
 ) {
   const res: BlockEntry[] = [];
   materials.forEach((material: Material) => {
-    baseTextures.forEach((base: HueBlock) => {
+    baseTextures.forEach((base: IBlockTexture) => {
       res.push(new BlockEntry(namespace, base, material));
     });
   });
 
   return res;
 }
+
 export default async function createAddon(
   uuids: PackIDs,
   {
     size,
     namespace,
     description,
-    blockColors,
+    blocks,
     materialOptions,
     pixelArtSource,
     pixelArtSourceName,
     animationAlignment,
   }: CreationParameters,
 ) {
-  if (!blockColors || !blockColors.length) {
+  if (!blocks || !blocks.length) {
     console.log("Default palette will be used");
   }
+
+  const res: BlockEntry[] = [];
+
+  const imgBlocks = ((blocks?.filter((block) => block instanceof ImageBlock)) ||
+    []) as ImageBlock[];
+  const hueBlocks = (blocks?.filter((block) => block instanceof HueBlock) ??
+    getBlocks()) as HueBlock[];
 
   const materials = materialOptions && materialOptions.length
     ? materialOptions
     : getMaterials();
 
-  const res = compileMaterials(
-    namespace,
-    blockColors ?? getBlocks(),
-    materials,
+  res.push(
+    ...compileMaterials(namespace, [...imgBlocks, ...hueBlocks], materials),
   );
 
   try {

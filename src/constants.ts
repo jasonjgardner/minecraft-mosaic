@@ -6,6 +6,8 @@ export const MAX_PACK_SIZE: PackSizes = 256;
 
 export const DEFAULT_PACK_SIZE: PackSizes = MIN_PACK_SIZE;
 
+export const DEFAULT_SLICE_SIZE = 16;
+
 export const DEFAULT_LICENSE = "GPL-3.0-or-later";
 
 export const DEFAULT_BUILD_VERSION = "1.0.0";

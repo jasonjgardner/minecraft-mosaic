@@ -1,7 +1,9 @@
 import type { PaletteInput, RGB, RGBA } from "../../types.d.ts";
 import { GIF, Image } from "imagescript/mod.ts";
 import HueBlock from "../blocks/HueBlock.ts";
+import ImageBlock from "../blocks/ImageBlock.ts";
 import { handlePaletteInput, rgbaMatch } from "../../_utils.ts";
+import { CHUNK_SIZE } from "../../constants.ts";
 
 /**
  * Minimum pixel alpha value to allow in palette
@@ -28,7 +30,37 @@ const BOUNDARY_Y = 256;
  */
 const MAX_FRAME_DEPTH = 10;
 
-export default async function getPalette(
+export async function getSlices(
+  src: Extract<string, PaletteInput>,
+  size: number,
+): Promise<ImageBlock[]> {
+  const input = await handlePaletteInput(src);
+  const frame = (input instanceof GIF ? input[0] : input);
+
+  const { width, height } = frame;
+  const slices: Array<ImageBlock> = [];
+
+  for (let xItr = 0; xItr < width; xItr += size) {
+    for (let yItr = 0; yItr < height; yItr += size) {
+      const frameTexture = frame.clone().crop(xItr, yItr, size, size);
+
+      const block = new ImageBlock(
+        frameTexture,
+        [xItr, yItr],
+        {
+          en_US: `Slice ${xItr} ${yItr}`,
+          en_GB: `Slice ${xItr},${yItr}`,
+        },
+      );
+
+      slices.push(block);
+    }
+  }
+
+  return slices;
+}
+
+export async function getPalette(
   src: Extract<string, PaletteInput>,
 ): Promise<HueBlock[]> {
   const colors: RGBA[] = [];

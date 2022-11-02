@@ -1,6 +1,6 @@
 //import type Material from "./Material.ts";
 import type { Alignment, Axis, RGB, RGBA } from "../types.d.ts";
-//import { stringify } from "https://esm.sh/nbt-ts";
+
 import { Frame, GIF, Image } from "imagescript/mod.ts";
 import { basename } from "path/mod.ts";
 import { sprintf } from "fmt/printf.ts";
@@ -17,7 +17,7 @@ import {
   TRANSPARENT_PRINT_BLOCK_THRESHOLD,
 } from "../constants.ts";
 import BlockEntry from "./BlockEntry.ts";
-import { addToBehaviorPack } from "./_state.ts";
+import { addToBehaviorPack, addToResourcePack } from "./_state.ts";
 import { rgbaMatch } from "../_utils.ts";
 
 const axises: [Axis, Axis, Axis] = ["x", "y", "z"];
@@ -27,37 +27,6 @@ interface PrinterResult {
   label: string;
   axis: Axis;
   func: string;
-}
-
-type NbtData = { [key: string]: number | boolean | string };
-
-type Coordinates = [number, number, number];
-
-interface BlockPaletteData {
-  version: number;
-  name: string;
-  states: NbtData;
-}
-
-interface IMinecraftStructure {
-  format_version: 1;
-  size: Coordinates;
-  structure_world_origin: Coordinates;
-
-  structure: {
-    block_indices: Array<Coordinates>;
-    entities?: Array<{ [k: string]: string | number }>;
-    palette: {
-      [k: string]: {
-        block_palette?: [BlockPaletteData[], NbtData[] | undefined];
-        block_position_data: {
-          [idx: number]: {
-            block_entity_data: NbtData;
-          };
-        };
-      };
-    };
-  };
 }
 
 function colorDistance(color1: RGB, color2: RGB) {
@@ -111,64 +80,6 @@ function writeFill(
   return `fill ${position} ${position} ${
     fillWith ?? TRANSPARENT_PRINT_BLOCK
   } 0 keep`;
-}
-
-export function constructDecoded(
-  frames: GIF | Array<Image | Frame>,
-  palette: BlockEntry[],
-) {
-  const structureTag: IMinecraftStructure = {
-    format_version: 1,
-    size: [1, 1, 1],
-    structure_world_origin: [0, 0, 0],
-    structure: {
-      block_indices: [[0, 0, 0]],
-      entities: [],
-      palette: {
-        default: {
-          block_position_data: {},
-        },
-      },
-    },
-  };
-
-  const frameCount = frames.length;
-  const structureBlockPalette: BlockPaletteData[] = [];
-  const positionData = [];
-  const layer = [];
-  let idx = 0;
-
-  for (let z = 0; z < frameCount; z++) {
-    const img = frames[z];
-
-    for (const [x, y, c] of img.iterateWithColors()) {
-      layer.push([z, y, x]);
-
-      structureBlockPalette.push({
-        version: BLOCK_ENGINE_VERSION,
-        name: getBlockIdByColor(
-          <RGBA> Image.colorToRGBA(c),
-          palette,
-        ),
-        states: {},
-      });
-
-      positionData.push([idx, { block_entity_data: {} }]);
-
-      idx++;
-    }
-  }
-
-  structureTag.structure.palette.default.block_palette = [
-    structureBlockPalette,
-    [],
-  ];
-  structureTag.structure.palette.default.block_position_data = Object
-    .fromEntries(
-      positionData,
-    );
-
-  return structureTag;
 }
 
 function printDecoded(
@@ -230,7 +141,7 @@ function printDecoded(
   return fns.flat();
 }
 
-function getBlockIdByColor(color: RGBA, palette: BlockEntry[]) {
+export function getBlockIdByColor(color: RGBA, palette: BlockEntry[]) {
   const fuzzRange = [255 / 10, 255 / 10, 255 / 10, 255 / 50];
   const exact = palette.find(({ color: { rgba } }) =>
     rgbaMatch(color, rgba, fuzzRange)

@@ -1,5 +1,6 @@
 import type Material from "./components/Material.ts";
-import type HueBlock from "./components/blocks/HueBlock.ts";
+
+import { Frame, Image } from "imagescript/mod.ts";
 
 export type ChannelValue = number;
 
@@ -26,8 +27,17 @@ export type SemverVector = [number, number, number];
 export interface TextureSet {
   heightmap?: string;
   normal?: string;
-  color: string | RGB | RGBA;
+  color: string | Image | Frame | RGB | RGBA;
   metalness_emissive_roughness?: string | RGB;
+}
+
+export interface IBlockTexture {
+  name: string;
+  title(lang: LanguageId): string;
+  components: MinecraftData;
+  textureSet: TextureSet | Omit<TextureSet, "color">;
+  rgba: RGBA;
+  hex: string;
 }
 
 export interface BlockComponents {
@@ -103,10 +113,11 @@ export interface CreationParameters {
   namespace: string;
   pixelArtSourceName?: string;
   description?: string;
-  blockColors?: HueBlock[];
+  blocks?: Array<IBlockTexture>;
   materialOptions?: Material[];
   outputFunctions?: boolean;
   outputPixelArt?: boolean;
   pixelArtSource?: string;
   animationAlignment?: Alignment;
+  slices?: number;
 }
