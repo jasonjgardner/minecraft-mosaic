@@ -6,7 +6,6 @@ import { basename } from "path/mod.ts";
 import { sprintf } from "fmt/printf.ts";
 import { EOL } from "fs/mod.ts";
 import {
-  BLOCK_ENGINE_VERSION,
   CHUNK_SIZE,
   DEFAULT_PRINT_BLOCK,
   DEFAULT_PRINT_CHUNKS,
@@ -17,7 +16,7 @@ import {
   TRANSPARENT_PRINT_BLOCK_THRESHOLD,
 } from "../constants.ts";
 import BlockEntry from "./BlockEntry.ts";
-import { addToBehaviorPack, addToResourcePack } from "./_state.ts";
+import { addToBehaviorPack } from "./_state.ts";
 import { rgbaMatch } from "../_utils.ts";
 import { HueBlock, ImageBlock } from "./blocks/index.ts";
 
@@ -327,7 +326,9 @@ export function positionPrinter(name: string, palette: BlockEntry[]) {
       const structureId = `${name}_${label}_${axis}`;
       addToBehaviorPack(
         `${DIR_FUNCTIONS}/${structureId}.mcfunction`,
-        fns.map(({ func }) => func).join(EOL.CRLF),
+        fns.filter(({ label: l }) => l === label).map(({ func }) => func).join(
+          EOL.CRLF,
+        ),
       );
     });
   });
