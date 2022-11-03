@@ -305,30 +305,30 @@ function createParentFunction(
 }
 
 export function positionPrinter(name: string, palette: BlockEntry[]) {
-  const blockPalette = palette.filter(({ color }) =>
-    color instanceof ImageBlock
-  );
+  // Split functions into groups by their alignment
 
   axises.forEach((axis) => {
     const fns: PrinterResult[] = [];
-    blockPalette.forEach((block) => {
-      if (!(block.color instanceof ImageBlock)) {
+    palette.forEach(({ color, behaviorId, material: { label } }) => {
+      if (!(color instanceof ImageBlock)) {
         return;
       }
 
-      const [x, y, z] = block.color.orientation(axis);
+      const [x, y, z] = color.orientation(axis);
 
       fns.push({
         axis,
-        label: block.id,
-        func:
-          `fill ~${x} ~-${y} ~${z} ~${x} ~-${y} ~${z} ${block.behaviorId} 0 keep`,
+        label,
+        func: `fill ~${x} ~-${y} ~${z} ~${x} ~-${y} ~${z} ${behaviorId} 0 keep`,
       });
     });
 
-    addToBehaviorPack(
-      `${DIR_FUNCTIONS}/${name}_${axis}.mcfunction`,
-      fns.map(({ func }) => func).join(EOL.CRLF),
-    );
+    fns.map(({ label }) => {
+      const structureId = `${name}_${label}_${axis}`;
+      addToBehaviorPack(
+        `${DIR_FUNCTIONS}/${structureId}.mcfunction`,
+        fns.map(({ func }) => func).join(EOL.CRLF),
+      );
+    });
   });
 }

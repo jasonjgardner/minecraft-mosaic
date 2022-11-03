@@ -168,10 +168,12 @@ export default async function printer(
     throw Error("Can not print pixel art. Palette source is too small.");
   }
 
-  const tasks: Promise<void>[] = [];
+  //const tasks: Promise<void>[] = [];
+  const name = (artSrcId ?? ART_SOURCE_ID).replace(/\s+/g, "_");
+
+  positionPrinter(name, palette);
 
   if (artSrc) {
-    const name = (artSrcId ?? ART_SOURCE_ID).replace(/\s+/g, "_");
     try {
       const img = await handlePaletteInput(artSrc);
 
@@ -186,8 +188,6 @@ export default async function printer(
         alignment: alignment ?? "b2b",
         chunks,
       });
-
-      positionPrinter(`${name}_position`, palette);
     } catch (err) {
       console.log("Failed printing pixel art from input: %s", err);
     }
@@ -212,5 +212,5 @@ export default async function printer(
   //   }
   // }
 
-  return Promise.allSettled(tasks);
+  //return Promise.allSettled(tasks);
 }
