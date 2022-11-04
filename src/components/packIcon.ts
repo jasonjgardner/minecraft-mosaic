@@ -11,16 +11,19 @@ import { join } from "path/mod.ts";
 import { Frame, GIF, Image, TextLayout } from "imagescript/mod.ts";
 import { handlePaletteInput } from "../_utils.ts";
 
-async function loadFont() {
+function loadFont() {
   try {
     return Deno.readFile(
       join(Deno.cwd(), "src", "assets", "fonts", FONT_FILE),
     );
   } catch (err) {
+    if (err instanceof Deno.errors.NotFound) {
+      return fetch(FONT_URL).then((res) => res.arrayBuffer()).then((buf) =>
+        new Uint8Array(buf)
+      );
+    }
     console.log("Failed reading local font: %s", err);
   }
-
-  return new Uint8Array(await (await fetch(FONT_URL)).arrayBuffer());
 }
 
 export async function getDefaultIcon() {
@@ -42,6 +45,11 @@ export async function getDefaultIcon() {
 async function createHeadline(namespace: string, icon: Image | Frame) {
   try {
     const fontData = await loadFont();
+
+    if (!fontData) {
+      console.warn("Failed loading font data");
+      return icon;
+    }
 
     const dominantRgba = Image.colorToRGBA(icon.dominantColor());
     const dominantHsla = Image.rgbaToHSLA(
@@ -72,7 +80,7 @@ async function createHeadline(namespace: string, icon: Image | Frame) {
     icon.saturation(0.75);
     icon.composite(iconHeadlineImg);
   } catch (err) {
-    console.log("Failed adding pack title to icon: %s", err);
+    console.warn("Failed adding pack title to icon: %s", err);
   }
 
   return icon;
@@ -91,7 +99,7 @@ export async function generatePackIcon(
   const icon = iconSrc instanceof GIF ? iconSrc[0] : iconSrc;
 
   // Resize to ideal pack_icon.png dimensions
-  icon.resize(PACK_ICON_SIZE, PACK_ICON_SIZE);
+  icon.contain(PACK_ICON_SIZE, PACK_ICON_SIZE);
 
   // Attempt to overlay the pack title on the icon
   try {
