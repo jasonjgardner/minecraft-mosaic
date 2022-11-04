@@ -5,13 +5,11 @@ import type {
   MinecraftData,
   MinecraftTerrainData,
   PackSizes,
-  RGB,
 } from "../types.d.ts";
 import type Material from "./Material.ts";
-
 import { Image } from "imagescript/mod.ts";
 import { sprintf } from "fmt/printf.ts";
-import { DEFAULT_PACK_SIZE } from "../constants.ts";
+import { DEFAULT_PACK_SIZE, TEXTURE_SET_FORMAT_VERSION } from "../constants.ts";
 import BlockEntry from "./BlockEntry.ts";
 import FlipbookEntry, { formatFlipbookName } from "./FlipbookEntry.ts";
 import { getMaterials } from "./materials/index.ts";
@@ -24,7 +22,7 @@ function flipbookData(
     `textures/blocks/${flipbookBlock.id}.texture_set.json`,
     JSON.stringify(
       {
-        format_version: "1.16.100",
+        format_version: TEXTURE_SET_FORMAT_VERSION,
         "minecraft:texture_set": flipbookBlock.textureSet,
       },
     ),
@@ -56,23 +54,15 @@ function flipbookData(
 }
 
 export async function makeAtlas(blocks: BlockEntry[], size?: PackSizes) {
-  const frames: RGB[] = blocks.map((block) =>
-    <RGB> block.color.valueOf().slice(0, 2)
-  );
-  const frameCount = frames.length;
+  const frameCount = blocks.length;
   const s = size || DEFAULT_PACK_SIZE;
   const atlasOutput = new Image(s, s * frameCount);
 
   // Create atlas frames
   for (let itr = 0; itr < frameCount; itr++) {
-    const imgOutput = new Image(s, s);
-
-    imgOutput.fill(
-      Image.rgbToColor(...frames[itr]),
-    );
+    atlasOutput.composite(<Image> blocks[itr].color.texture, 0, itr * s);
 
     // Join frames into single image
-    atlasOutput.composite(imgOutput, 0, itr * s);
   }
 
   return await atlasOutput.encode(0);

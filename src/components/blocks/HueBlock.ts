@@ -9,8 +9,8 @@ import type {
   TextureSet,
 } from "../../types.d.ts";
 import { hexValue } from "../../_utils.ts";
-
 import { labelLanguage } from "../BlockEntry.ts";
+import { Image } from "imagescript/mod.ts";
 
 export default class HueBlock implements IBlockTexture {
   _color!: RGBA;
@@ -28,6 +28,12 @@ export default class HueBlock implements IBlockTexture {
     return this._name
       ? this._name[lang]
       : hexValue(this._color).replace("#", "").toUpperCase();
+  }
+
+  get texture(): Image {
+    const img = new Image(16, 16);
+    img.fill(Image.rgbaToColor(...this.rgba));
+    return img;
   }
 
   get name() {

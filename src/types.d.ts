@@ -54,6 +54,7 @@ export interface IBlockTexture {
   title(lang: LanguageId): string;
   components: MinecraftData;
   textureSet: TextureSet | Omit<TextureSet, "color">;
+  texture: Image | Frame;
   rgba: RGBA;
   hex: string;
   isTranslucent: boolean;

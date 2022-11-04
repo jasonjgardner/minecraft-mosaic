@@ -64,7 +64,7 @@ export default class ImageBlock implements IBlockTexture {
     return this.title(labelLanguage).trim().replaceAll(/\s+/g, "_");
   }
 
-  get texture() {
+  get texture(): Image | Frame {
     return this._img;
   }
 

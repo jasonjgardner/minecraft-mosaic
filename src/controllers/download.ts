@@ -1,5 +1,6 @@
 import type { CreationParameters } from "../types.d.ts";
 import type Material from "../components/Material.ts";
+import type { IBlockTexture } from "../types.d.ts";
 import { DEFAULT_NAMESPACE, DEFAULT_PACK_SIZE } from "../constants.ts";
 import { sanitizeNamespace } from "../_utils.ts";
 import { getPalette, getSlices } from "../components/palettes/fromImage.ts";
@@ -62,7 +63,7 @@ export default async function download({
     materialOptions.push(new PlasticMaterial());
   }
 
-  let blocks = materialPalette;
+  let blocks: Array<IBlockTexture> = materialPalette;
 
   try {
     if (pixelArtSource) {

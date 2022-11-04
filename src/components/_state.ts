@@ -12,9 +12,8 @@ import { join } from "path/mod.ts";
 import { JSZip } from "jszip/mod.ts";
 import { Frame, Image } from "imagescript/mod.ts";
 import { calculateMipLevels } from "./_resize.ts";
-import { renderBlock, renderBorderSvg } from "./render.ts";
+import { renderBlock } from "./render.ts";
 import { hex2rgb } from "../_utils.ts";
-import ImageBlock from "./blocks/ImageBlock.ts";
 
 const zip = new JSZip();
 const rp = zip.folder("rp");
