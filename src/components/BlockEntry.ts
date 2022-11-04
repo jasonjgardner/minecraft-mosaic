@@ -16,9 +16,7 @@ import {
 import { sprintf } from "fmt/printf.ts";
 import { deepMerge } from "collections/mod.ts";
 import { sanitizeNamespace } from "../_utils.ts";
-import HueBlock from "./blocks/HueBlock.ts";
 import Material from "./Material.ts";
-import ImageBlock from "./blocks/ImageBlock.ts";
 
 export const labelLanguage: LanguageId = "en_US";
 
@@ -195,7 +193,7 @@ export default class BlockEntry {
     return deepMerge({
       "*": {
         texture: this.resourceId,
-        render_method: this._hue.rgba[3] < 255 ? "blend" : "opaque",
+        render_method: this.color.isTranslucent ? "blend" : "opaque",
       },
     }, this._material.materialInstance);
   }
@@ -205,11 +203,11 @@ export default class BlockEntry {
       {
         "minecraft:material_instances": this.materialInstances,
       },
-      deepMerge(this._hue.components, this._material.components),
+      deepMerge(this.color.components, this._material.components),
     );
   }
 
   get translucent() {
-    return this._hue.rgba[3] < 255 && this._material.translucent !== false;
+    return this.color.isTranslucent && this._material.translucent !== false;
   }
 }

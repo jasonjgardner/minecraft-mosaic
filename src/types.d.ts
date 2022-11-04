@@ -31,6 +31,24 @@ export interface TextureSet {
   metalness_emissive_roughness?: string | RGB;
 }
 
+export type MaterialInstanceFace =
+  | "*"
+  | "up"
+  | "down"
+  | "north"
+  | "south"
+  | "east"
+  | "west";
+
+export type MaterialInstance = {
+  [face in MaterialInstanceFace]?: {
+    texture: string;
+    render_method: "opaque" | "double_sided" | "blend" | "alpha_test";
+    face_dimming: boolean;
+    ambient_occlusion: boolean;
+  };
+};
+
 export interface IBlockTexture {
   name: string;
   title(lang: LanguageId): string;
@@ -38,6 +56,8 @@ export interface IBlockTexture {
   textureSet: TextureSet | Omit<TextureSet, "color">;
   rgba: RGBA;
   hex: string;
+  isTranslucent: boolean;
+  isTransparent: boolean;
 }
 
 export interface BlockComponents {

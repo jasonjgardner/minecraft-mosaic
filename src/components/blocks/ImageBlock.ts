@@ -9,10 +9,10 @@ import type {
 import { Frame, Image } from "imagescript/mod.ts";
 import { labelLanguage } from "../BlockEntry.ts";
 import { hexValue } from "../../_utils.ts";
+import { sprintf } from "fmt/printf.ts";
+import { MIN_ALPHA } from "../../constants.ts";
 
 type Coordinates = [number, number, number?];
-
-let sliceId = 0;
 
 export default class ImageBlock implements IBlockTexture {
   _img!: Image | Frame;
@@ -21,24 +21,26 @@ export default class ImageBlock implements IBlockTexture {
   _color!: RGBA;
 
   _position!: Coordinates;
+
+  _size!: number;
   constructor(
     img: Image | Frame,
     position?: Coordinates,
     name?: MultiLingual,
   ) {
-    this._img = img;
-
-    this._name = name ?? {
-      en_US: `Slice ${++sliceId}`,
-      en_GB: `Slice ${sliceId}`,
-    };
-
-    this._color = <RGBA> Image.colorToRGBA(img.dominantColor());
-
     this._position = <Coordinates> position?.slice(
       0,
       3,
     ) ?? [0, 0, 0];
+
+    this._img = img;
+
+    this._name = name ?? {
+      en_US: sprintf("Slice X%d Y%d Z%d", ...this.position),
+      en_GB: sprintf("Slice X%d Y%d Z%d", ...this.position),
+    };
+
+    this._color = <RGBA> Image.colorToRGBA(img.dominantColor());
   }
 
   title(lang: LanguageId = "en_US") {
@@ -92,5 +94,34 @@ export default class ImageBlock implements IBlockTexture {
 
   get position() {
     return this._position;
+  }
+
+  /**
+   * Check if any of the pixels in the image are transparent
+   */
+  get isTranslucent() {
+    for (const [, , c] of this._img.iterateWithColors()) {
+      const color = Image.colorToRGBA(c);
+
+      if (color[3] < 255) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if the entire image is made of transparent pixels
+   */
+  get isTransparent() {
+    for (const [, , c] of this._img.iterateWithColors()) {
+      const color = Image.colorToRGBA(c);
+
+      if (color[3] > MIN_ALPHA) {
+        return false;
+      }
+    }
+    return true;
   }
 }

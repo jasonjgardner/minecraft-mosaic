@@ -1,3 +1,4 @@
+import { MIN_ALPHA } from "../../constants.ts";
 import type {
   IBlockTexture,
   LanguageId,
@@ -56,5 +57,13 @@ export default class HueBlock implements IBlockTexture {
           6,
         ),
     };
+  }
+
+  get isTranslucent() {
+    return this._color[3] < 255;
+  }
+
+  get isTransparent() {
+    return this._color[3] < MIN_ALPHA;
   }
 }

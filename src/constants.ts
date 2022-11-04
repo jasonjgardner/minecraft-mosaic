@@ -70,6 +70,11 @@ export const TRANSPARENT_PRINT_BLOCK = "minecraft:air";
 
 export const TRANSPARENT_PRINT_BLOCK_THRESHOLD = 0.5;
 
+/**
+ * Minimum pixel alpha value to allow in palette
+ */
+export const MIN_ALPHA = Math.round(255 * TRANSPARENT_PRINT_BLOCK_THRESHOLD);
+
 export const TARGET_VERSION: [number, number, number] = [1, 19, 2];
 
 export const BASE_GAME_VERSION: [number, number, number] = TARGET_VERSION;

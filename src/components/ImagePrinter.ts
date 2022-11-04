@@ -313,12 +313,15 @@ export function positionPrinter(name: string, palette: BlockEntry[]) {
         return;
       }
 
+      const fillWith = color.isTransparent
+        ? TRANSPARENT_PRINT_BLOCK
+        : behaviorId;
       const [x, y, z] = color.orientation(axis);
 
       fns.push({
         axis,
         label,
-        func: `fill ~${x} ~-${y} ~${z} ~${x} ~-${y} ~${z} ${behaviorId} 0 keep`,
+        func: `fill ~${x} ~-${y} ~${z} ~${x} ~-${y} ~${z} ${fillWith} 0 keep`,
       });
     });
 
