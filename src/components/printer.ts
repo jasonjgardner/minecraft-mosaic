@@ -2,7 +2,6 @@ import "dotenv/load.ts";
 import type { Alignment, PaletteInput } from "../types.d.ts";
 import { basename, dirname, extname, join, toFileUrl } from "path/mod.ts";
 import { walk } from "fs/walk.ts";
-import { Octokit } from "@octokit/core";
 import {
   ART_SOURCE_ID,
   CHUNK_SIZE,
@@ -13,47 +12,7 @@ import {
 import BlockEntry from "./BlockEntry.ts";
 import { pixelPrinter, positionPrinter } from "./ImagePrinter.ts";
 import { fetchImage, handlePaletteInput } from "../_utils.ts";
-import { ImageBlock } from "./blocks/index.ts";
-
-async function githubAvatars(
-  owner: string,
-  repo: string,
-  palette: BlockEntry[],
-) {
-  const octokit = new Octokit();
-
-  const { status, data } = await octokit.request(
-    "GET /repos/{owner}/{repo}/stargazers",
-    {
-      owner,
-      repo,
-      per_page: 50,
-    },
-  );
-
-  if (status !== 200) {
-    throw Error("Failed fetching GitHub data");
-  }
-
-  return Promise.allSettled(
-    data.map(
-      async (res: {
-        login: string;
-        avatar_url: string;
-        [key: string]: string | boolean;
-      }) =>
-        pixelPrinter(
-          `stargazers/${res.login}`,
-          await fetchImage(new URL(res.avatar_url)),
-          palette,
-          {
-            alignment: "none",
-            chunks: MAX_PRINT_CHUNKS,
-          },
-        ),
-    ),
-  );
-}
+import Addon from "./Addon.ts";
 
 export function getPrintablePalette(palette: BlockEntry[]) {
   const filtered = palette.filter(
@@ -67,27 +26,8 @@ export function getPrintablePalette(palette: BlockEntry[]) {
   throw Error("No blocks available in palette");
 }
 
-export async function printPatrons(
-  palette: BlockEntry[],
-  options: {
-    repo: string;
-  },
-) {
-  const actionRepo = options.repo.split("/", 2);
-
-  if (actionRepo.length < 2) {
-    throw TypeError('Invalid repo format. Expected "owner/repo"');
-  }
-
-  try {
-    // Print images from GitHub API
-    await githubAvatars(actionRepo[0], actionRepo[1], palette);
-  } catch (err) {
-    throw Error(`Failed adding Stargazers: ${err}`);
-  }
-}
-
 export async function printPixelArt(
+  addon: Addon,
   palette: BlockEntry[],
   options?: {
     chunks?: number;
@@ -121,6 +61,7 @@ export async function printPixelArt(
 
     try {
       pixelPrinter(
+        addon,
         structureName,
         await fetchImage(fileUrl),
         printablePalette,
@@ -136,29 +77,18 @@ export async function printPixelArt(
   }
 }
 
-export function printStarGazers(res: BlockEntry[]) {
-  const thisRepo = Deno.env.get("GITHUB_REPOSITORY") ?? "";
-
-  if (!thisRepo || thisRepo.length < 1) {
-    throw Error("Can not find GitHub repo stargazer source");
-  }
-
-  return printPatrons(getPrintablePalette(res), {
-    repo: thisRepo,
-  });
-}
-
-export function printPixelArtDirectory(res: BlockEntry[]) {
+export function printPixelArtDirectory(addon: Addon, res: BlockEntry[]) {
   try {
     const printPalette = getPrintablePalette(res);
 
-    return printPixelArt(printPalette);
+    return printPixelArt(addon, printPalette);
   } catch (err) {
     console.error(err);
   }
 }
 
 export default async function printer(
+  addon: Addon,
   palette: BlockEntry[],
   artSrc?: PaletteInput,
   alignment?: Alignment,
@@ -171,7 +101,7 @@ export default async function printer(
   //const tasks: Promise<void>[] = [];
   const name = (artSrcId ?? ART_SOURCE_ID).replace(/\s+/g, "_");
 
-  positionPrinter(name, palette);
+  positionPrinter(addon, name, palette);
 
   if (artSrc) {
     try {
@@ -184,7 +114,7 @@ export default async function printer(
         Math.max(1, Math.max(img.width, img.height) / CHUNK_SIZE),
       );
 
-      pixelPrinter(name, img, palette, {
+      pixelPrinter(addon, name, img, palette, {
         alignment: alignment ?? "b2b",
         chunks,
       });

@@ -22,9 +22,12 @@ export default class ImageBlock implements IBlockTexture {
 
   _position!: Coordinates;
 
+  _offset: [number, number];
+
   _size!: number;
   constructor(
     img: Image | Frame,
+    offset: [number, number, number],
     position?: Coordinates,
     name?: MultiLingual,
   ) {
@@ -41,6 +44,23 @@ export default class ImageBlock implements IBlockTexture {
     };
 
     this._color = <RGBA> Image.colorToRGBA(img.dominantColor());
+
+    this._offset = [offset[0], offset[1]];
+    this._size = offset[2];
+  }
+
+  /**
+   * Crop an image to match the size and position of the block
+   * @param img Image to modify
+   * @returns Cropped image
+   */
+  stencil(img: Image | Frame) {
+    return img.clone().crop(
+      this._offset[0],
+      this._offset[1],
+      this._size,
+      this._size,
+    );
   }
 
   title(lang: LanguageId = "en_US") {

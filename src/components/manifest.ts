@@ -1,12 +1,11 @@
 import type { PackIDs } from "../types.d.ts";
 import {
-  BASE_GAME_VERSION as base_game_version,
   DEFAULT_BUILD_VERSION,
   DEFAULT_LICENSE,
   TARGET_VERSION as min_engine_version,
 } from "../constants.ts";
-import { addToBehaviorPack, addToResourcePack } from "./_state.ts";
 import { semverVector } from "../_utils.ts";
+import Addon from "./Addon.ts";
 
 function getMetadata() {
   const metadata: {
@@ -56,6 +55,7 @@ function getMetadata() {
 }
 
 export function createManifests(
+  addon: Addon,
   uuids: PackIDs,
   name: string,
   description?: string,
@@ -64,7 +64,7 @@ export function createManifests(
 
   const metadata = getMetadata();
 
-  addToResourcePack(
+  addon.addToResourcePack(
     "manifest.json",
     JSON.stringify({
       format_version: 2,
@@ -94,7 +94,7 @@ export function createManifests(
     }),
   );
 
-  addToBehaviorPack(
+  addon.addToBehaviorPack(
     "manifest.json",
     JSON.stringify({
       format_version: 2,

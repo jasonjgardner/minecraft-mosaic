@@ -10,12 +10,7 @@ import { getMaterials } from "./components/materials/index.ts";
 import { generatePackIcon, getDefaultIcon } from "./components/packIcon.ts";
 import { createManifests } from "./components/manifest.ts";
 import printer from "./components/printer.ts";
-import {
-  addBlock,
-  addToBehaviorPack,
-  addToResourcePack,
-  createArchive,
-} from "./components/_state.ts";
+import Addon from "./components/Addon.ts";
 
 // Join base textures with PBR materials
 function compileMaterials(
@@ -50,6 +45,7 @@ export default async function createAddon(
     console.log("Default palette will be used");
   }
 
+  const addon = new Addon();
   const res: BlockEntry[] = [];
 
   const imgBlocks = ((blocks?.filter((block) => block instanceof ImageBlock)) ||
@@ -70,21 +66,24 @@ export default async function createAddon(
       ? await generatePackIcon(namespace, pixelArtSource)
       : await getDefaultIcon();
 
-    addToResourcePack("pack_icon.png", packIcon);
-    addToBehaviorPack("pack_icon.png", packIcon);
+    addon.addToResourcePack("pack_icon.png", packIcon);
+    addon.addToBehaviorPack("pack_icon.png", packIcon);
   } catch (err) {
     console.log("Failed adding pack icons: %s", err);
   }
 
   // TODO: Add description input
-  createManifests(uuids, namespace, description ?? DEFAULT_DESCRIPTION);
+  createManifests(addon, uuids, namespace, description ?? DEFAULT_DESCRIPTION);
 
-  await Promise.all(res.map((block: BlockEntry) => addBlock(block, size)));
+  await Promise.all(
+    res.map((block: BlockEntry) => addon.addBlock(block, size)),
+  );
 
   //createFunctions();
 
   try {
     await printer(
+      addon,
       res,
       pixelArtSource,
       animationAlignment,
@@ -94,5 +93,5 @@ export default async function createAddon(
     console.warn("Failed creating pixel art functions: %s", err);
   }
 
-  return createArchive(namespace, size);
+  return addon.createArchive(namespace, size);
 }

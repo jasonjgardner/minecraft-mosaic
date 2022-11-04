@@ -2,7 +2,7 @@ import type { CreationParameters } from "../types.d.ts";
 import type Material from "../components/Material.ts";
 import type { IBlockTexture } from "../types.d.ts";
 import { DEFAULT_NAMESPACE, DEFAULT_PACK_SIZE } from "../constants.ts";
-import { sanitizeNamespace } from "../_utils.ts";
+import { getPackIds, sanitizeNamespace } from "../_utils.ts";
 import { getPalette, getSlices } from "../components/palettes/fromImage.ts";
 import materialPalette from "../components/palettes/materialDesign.ts";
 import PlasticMaterial from "../components/materials/PlasticMaterial.ts";
@@ -50,6 +50,7 @@ export default async function download({
   animationAlignment,
   slices,
 }: CreationParameters, materialIds?: string) {
+  // TODO: Generate namespace before falling back to default
   const ns = sanitizeNamespace(
     namespace ?? pixelArtSource ?? DEFAULT_NAMESPACE,
   );
@@ -76,12 +77,7 @@ export default async function download({
     console.log("Failed extracting color palette: %s", err);
   }
 
-  return createAddon([
-    crypto.randomUUID(),
-    crypto.randomUUID(),
-    crypto.randomUUID(),
-    crypto.randomUUID(),
-  ], {
+  return createAddon(getPackIds(), {
     namespace: ns.length > 1 ? ns : DEFAULT_NAMESPACE,
     size: size || DEFAULT_PACK_SIZE,
     pixelArtSource,

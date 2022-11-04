@@ -1,5 +1,6 @@
 import type {
   ChannelValue,
+  PackIDs,
   PaletteInput,
   RGB,
   RGBA,
@@ -11,6 +12,17 @@ import { decode } from "https://deno.land/std@0.140.0/encoding/base64.ts";
 import { GIF, Image } from "imagescript/mod.ts";
 import { basename, extname } from "path/mod.ts";
 import { v4 } from "https://deno.land/std@0.140.0/uuid/mod.ts";
+
+export function getPackIds(): PackIDs {
+  // TODO: Allow loading UUIDs from environment for dev mode
+
+  return [
+    crypto.randomUUID(),
+    crypto.randomUUID(),
+    crypto.randomUUID(),
+    crypto.randomUUID(),
+  ];
+}
 
 /**
  * Ensure namespace input is usable in Minecraft

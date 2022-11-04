@@ -38,6 +38,10 @@ export async function getSlices(
 
   const frames = (input instanceof GIF ? input : [input]);
 
+  if (frames.length > MAX_FRAME_DEPTH) {
+    frames.length = MAX_FRAME_DEPTH;
+  }
+
   const slices: Array<ImageBlock> = [];
 
   let zItr = 0;
@@ -53,6 +57,7 @@ export async function getSlices(
         slices.push(
           new ImageBlock(
             frameTexture,
+            [xItr, yItr, size],
             [positionXitr, positionYitr, zItr],
             {
               en_US: `X${positionXitr} Y${positionYitr} Z${zItr}`,

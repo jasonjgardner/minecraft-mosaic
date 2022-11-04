@@ -16,9 +16,9 @@ import {
   TRANSPARENT_PRINT_BLOCK_THRESHOLD,
 } from "../constants.ts";
 import BlockEntry from "./BlockEntry.ts";
-import { addToBehaviorPack } from "./_state.ts";
 import { rgbaMatch } from "../_utils.ts";
 import { HueBlock, ImageBlock } from "./blocks/index.ts";
+import Addon from "./Addon.ts";
 
 const axises: [Axis, Axis, Axis] = ["x", "y", "z"];
 const DIR_FUNCTIONS = `functions/${FUNCTIONS_NAMESPACE}`;
@@ -83,6 +83,7 @@ function writeFill(
 }
 
 function printDecoded(
+  addon: Addon,
   name: string,
   img: Image | Frame,
   palette: BlockEntry[],
@@ -129,7 +130,7 @@ function printDecoded(
         const filename = sprintf("%s_%s_%s.mcfunction", name, label, axis);
         const filePath = `${dest}/${filename}`;
 
-        addToBehaviorPack(filePath, func.join(EOL.CRLF));
+        addon.addToBehaviorPack(filePath, func.join(EOL.CRLF));
 
         return { label, axis, func: filename };
       });
@@ -198,6 +199,7 @@ function getAlignment(
 }
 
 export function pixelPrinter(
+  addon: Addon,
   name: string,
   imageData: Image | GIF,
   palette: BlockEntry[],
@@ -241,6 +243,7 @@ export function pixelPrinter(
 
     try {
       const res = printDecoded(
+        addon,
         fileName,
         frame,
         blockPalette,
@@ -264,10 +267,11 @@ export function pixelPrinter(
   }
 
   // GIFs with "none" alignment get delay to animate fill
-  createParentFunction(name, groupFn, size);
+  createParentFunction(addon, name, groupFn, size);
 }
 
 function createParentFunction(
+  addon: Addon,
   name: string,
   groupFn: Array<PrinterResult[]>,
   _size: number,
@@ -296,14 +300,18 @@ function createParentFunction(
     const structureId = `${name}_${materialPositionKey}`;
     //fns[materialPositionKey] = `structure save ~ ~ ~ ~${size} ~${size} `
 
-    addToBehaviorPack(
+    addon.addToBehaviorPack(
       `${DIR_FUNCTIONS}/${structureId}.mcfunction`,
       fns[materialPositionKey].join(EOL.CRLF),
     );
   }
 }
 
-export function positionPrinter(name: string, palette: BlockEntry[]) {
+export function positionPrinter(
+  addon: Addon,
+  name: string,
+  palette: BlockEntry[],
+) {
   // Split functions into groups by their alignment
 
   axises.forEach((axis) => {
@@ -327,7 +335,7 @@ export function positionPrinter(name: string, palette: BlockEntry[]) {
 
     fns.map(({ label }) => {
       const structureId = `${name}_${label}_${axis}`;
-      addToBehaviorPack(
+      addon.addToBehaviorPack(
         `${DIR_FUNCTIONS}/${structureId}.mcfunction`,
         fns.filter(({ label: l }) => l === label).map(({ func }) => func).join(
           EOL.CRLF,
