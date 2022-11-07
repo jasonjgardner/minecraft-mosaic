@@ -1,4 +1,4 @@
-import type { CreationParameters } from "../types.d.ts";
+import type { CreationParameters, PackSizes } from "../types.d.ts";
 import type Material from "../components/Material.ts";
 import type { IBlockTexture } from "../types.d.ts";
 import { DEFAULT_NAMESPACE, DEFAULT_PACK_SIZE } from "../constants.ts";
@@ -32,21 +32,27 @@ function materialFactory(materialIds: string[]): Material[] {
   return res;
 }
 
-function getBlockPalette(pixelArtSource?: string, slices?: number) {
+function getBlockPalette(
+  pixelArtSource?: string,
+  merSource?: string,
+  normalSource?: string,
+  slices?: CreationParameters["slices"],
+) {
   if (!pixelArtSource) {
     return materialPalette;
   }
 
   return slices
-    ? getSlices(pixelArtSource, slices)
+    ? getSlices(slices, pixelArtSource, merSource, normalSource)
     : getPalette(pixelArtSource);
 }
 
 export default async function download({
   pixelArtSource,
   pixelArtSourceName,
+  merSource,
+  normalSource,
   namespace,
-  size,
   animationAlignment,
   slices,
 }: CreationParameters, materialIds?: string) {
@@ -70,6 +76,8 @@ export default async function download({
     if (pixelArtSource) {
       blocks = await getBlockPalette(
         pixelArtSource,
+        merSource,
+        normalSource,
         slices,
       );
     }
@@ -78,12 +86,13 @@ export default async function download({
   }
 
   return createAddon(getPackIds(), {
-    namespace: ns.length > 1 ? ns : DEFAULT_NAMESPACE,
-    size: size || DEFAULT_PACK_SIZE,
+    namespace: ns.length > 0 ? ns : DEFAULT_NAMESPACE,
+    size: (slices?.textureSize || DEFAULT_PACK_SIZE) as PackSizes,
     pixelArtSource,
     pixelArtSourceName,
     blocks,
     materialOptions,
     animationAlignment,
+    slices,
   });
 }

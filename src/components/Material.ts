@@ -155,7 +155,7 @@ export default class Material {
 
   get materialInstance() {
     return {
-      "*": {
+      "this_texture": {
         ambient_occlusion: 100 * (this.emissive / 255) < AO_EMISSIVE_THRESHOLD, // Allow AO if block isn't too bright
         face_dimming: !this.emissive,
       },

@@ -19,6 +19,9 @@ export default class Addon {
   _zip!: JSZip;
   _blocksJson: MinecraftData = {};
   _textureData: MinecraftTerrainData = {};
+  _flipbooksJson: Array<
+    { [key: string]: string | number[] | number | boolean }
+  > = [];
   _languages: LanguagesContainer = {
     en_US: [],
     en_GB: [],
@@ -26,6 +29,7 @@ export default class Addon {
 
   constructor() {
     this._zip = new JSZip();
+    this._flipbooksJson = [];
   }
 
   get resourcePack() {
@@ -56,24 +60,72 @@ export default class Addon {
       // Add color texture
       this.resourcePack.folder("textures/blocks").addFile(
         Addon.sanitizeFilename(`${block.resourceId}.png`),
-        await textureSet.color.resize(size, size).encode(COMPRESSION_LEVEL),
+        await textureSet.color.resize(size, Image.RESIZE_AUTO).encode(
+          COMPRESSION_LEVEL,
+        ),
       );
+
+      if (textureSet.color.height > textureSet.color.width) {
+        this.addFlipbook(block);
+      }
       textureSet.color = block.resourceId;
     } else {
       await this.requireMaterialAsset(`${textureSet.color}`, size);
     }
 
-    if (!isColor(textureSet.metalness_emissive_roughness || "")) {
+    if (
+      textureSet.metalness_emissive_roughness instanceof Image
+    ) {
+      // Add mer texture
+      this.resourcePack.folder("textures/blocks").addFile(
+        Addon.sanitizeFilename(`${block.resourceId}_mer.png`),
+        await textureSet.metalness_emissive_roughness.resize(
+          size,
+          Image.RESIZE_AUTO,
+        ).encode(
+          COMPRESSION_LEVEL,
+        ),
+      );
+      textureSet.metalness_emissive_roughness = `${block.resourceId}_mer`;
+    } else if (
+      textureSet.metalness_emissive_roughness !== undefined &&
+      !isColor(textureSet.metalness_emissive_roughness || "")
+    ) {
       await this.requireMaterialAsset(
         `${textureSet.metalness_emissive_roughness}`,
         size,
       );
     }
 
-    if (textureSet.normal) {
+    if (
+      textureSet.normal instanceof Image
+    ) {
+      const filename = Addon.sanitizeFilename(`${block.resourceId}_normal`);
+      this.resourcePack.folder("textures/blocks").addFile(
+        `${filename}.png`,
+        await textureSet.normal.resize(size, Image.RESIZE_AUTO).encode(
+          COMPRESSION_LEVEL,
+        ),
+      );
+      textureSet.normal = filename;
+    } else if (textureSet.normal !== undefined) {
       await this.requireMaterialAsset(textureSet.normal, size);
-    } else if (textureSet.heightmap) {
-      await this.requireMaterialAsset(textureSet.heightmap, size);
+    } else if (textureSet.heightmap !== undefined) {
+      if (textureSet.heightmap instanceof Image) {
+        const filename = Addon.sanitizeFilename(
+          `${block.resourceId}_heightmap`,
+        );
+        // Add heightmap texture
+        this.resourcePack.folder("textures/blocks").addFile(
+          `${filename}.png`,
+          await textureSet.heightmap.resize(size, Image.RESIZE_AUTO).encode(
+            COMPRESSION_LEVEL,
+          ),
+        );
+        textureSet.heightmap = filename;
+      } else {
+        await this.requireMaterialAsset(textureSet.heightmap, size);
+      }
     }
 
     return this.resourcePack.folder("textures/blocks").addFile(
@@ -141,6 +193,32 @@ export default class Addon {
     return textureName.replace(".png", "");
   }
 
+  addFlipbook(block: BlockEntry) {
+    const frameCount = block.color.texture.height / block.color.texture.width;
+    const frames: number[] = [];
+
+    for (let i = 1; i <= frameCount; i++) {
+      frames.push(i);
+    }
+
+    const flipbookData = {
+      flipbook_texture: `textures/blocks/${block.resourceId}`,
+      frames,
+      atlas_tile: block.resourceId,
+      ticks_per_frame: 1, //Math.floor(frameCount * 1.666),
+      blend_frames: false,
+    };
+
+    this._flipbooksJson.push(flipbookData);
+  }
+
+  _writeFlipbooks() {
+    return this.addToResourcePack(
+      "textures/flipbook_textures.json",
+      JSON.stringify(this._flipbooksJson),
+    );
+  }
+
   addToBehaviorPack(key: string, contents: string | Uint8Array) {
     return this.behaviorPack.addFile(Addon.sanitizeFilename(key), contents, {
       createFolders: true,
@@ -183,6 +261,8 @@ export default class Addon {
         texture_data: this._textureData,
       }),
     );
+
+    this._writeFlipbooks();
 
     // createContentsFile(bp);
     // createContentsFile(rp);

@@ -53,10 +53,20 @@ router
 
           pixelArtSource: data.fields.img,
           pixelArtSourceName: data.fields.img_name ?? ART_SOURCE_ID,
+          merSource: data.fields.mer,
+          normalSource: data.fields.normal,
           namespace,
           description: data.fields.description ?? "Generated pixel art palette",
           animationAlignment: <Alignment> data.fields.alignment ?? "e2e",
-          slices: parseInt(data.fields.slices, 10) || DEFAULT_SLICE_SIZE,
+          // FIXME: Slices count interferes with size parameter
+          slices: {
+            sliceCount: parseInt(data.fields.slice_count ?? "1", 10),
+            canvasSize: parseInt(data.fields.slices, 10) || DEFAULT_SLICE_SIZE,
+            textureSize: <PackSizes> parseInt(
+              data.fields.size ?? `${DEFAULT_PACK_SIZE}`,
+              10,
+            ) || DEFAULT_PACK_SIZE,
+          },
         }, data.fields.materials ?? DEFAULT_MATERIAL_ID);
 
         const responseData = new Uint8Array(await blob.arrayBuffer());

@@ -7,6 +7,7 @@ import type {
   RGBA,
 } from "../../types.d.ts";
 import { Frame, Image } from "imagescript/mod.ts";
+import { rotate180 } from "imagescript/v2/ops/rotate.mjs";
 import { labelLanguage } from "../BlockEntry.ts";
 import { hexValue } from "../../_utils.ts";
 import { sprintf } from "fmt/printf.ts";
@@ -16,6 +17,8 @@ type Coordinates = [number, number, number?];
 
 export default class ImageBlock implements IBlockTexture {
   _img!: Image | Frame;
+  _mer?: Image;
+  _normal?: Image;
   _name!: MultiLingual;
 
   _color!: RGBA;
@@ -80,6 +83,28 @@ export default class ImageBlock implements IBlockTexture {
     return this.position;
   }
 
+  set mer(img: Image | undefined) {
+    this._mer = img;
+    // if (img) {
+    //   this._mer = this.stencil(img);
+    // }
+  }
+
+  get mer(): Image | undefined {
+    return this._mer;
+  }
+
+  set normal(img: Image | undefined) {
+    this._normal = img;
+    // if (img) {
+    //   this._normal = this.stencil(img);
+    // }
+  }
+
+  get normal(): Image | undefined {
+    return this._normal;
+  }
+
   get name() {
     return this.title(labelLanguage).trim().replaceAll(/\s+/g, "_");
   }
@@ -91,6 +116,8 @@ export default class ImageBlock implements IBlockTexture {
   get textureSet() {
     return {
       color: this._img,
+      metalness_emissive_roughness: this._mer,
+      normal: this._normal,
     };
   }
 
@@ -143,5 +170,23 @@ export default class ImageBlock implements IBlockTexture {
       }
     }
     return true;
+  }
+
+  flipTextures() {
+    const { mer, normal, texture } = this;
+
+    const flip = (img?: Image | Frame) => {
+      if (img) {
+        const flipped = img.clone();
+        rotate180(flipped);
+        return flipped;
+      }
+    };
+
+    return {
+      color: flip(texture),
+      metalness_emissive_roughness: flip(mer),
+      normal: flip(normal),
+    };
   }
 }

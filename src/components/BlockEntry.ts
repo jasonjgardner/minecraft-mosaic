@@ -100,8 +100,8 @@ export default class BlockEntry {
 
   get textureSet(): TextureSet {
     return <TextureSet> deepMerge(
-      this._hue.textureSet,
       this._material.textureSet,
+      this._hue.textureSet,
     );
   }
 
@@ -190,11 +190,23 @@ export default class BlockEntry {
   }
 
   get materialInstances() {
+    const render_method = this.color.isTranslucent ? "blend" : "opaque";
     return deepMerge({
-      "*": {
+      "this_texture": {
         texture: this.resourceId,
-        render_method: this.color.isTranslucent ? "blend" : "opaque",
+        render_method,
       },
+      "reversed_texture": {
+        texture: `${this.resourceId}_reversed`,
+        render_method,
+      },
+      "*": "this_texture",
+      "north": "this_texture",
+      "east": "reversed_texture",
+      "south": "reversed_texture",
+      "west": "this_texture",
+      "up": "this_texture",
+      "down": "reversed_texture",
     }, this._material.materialInstance);
   }
 

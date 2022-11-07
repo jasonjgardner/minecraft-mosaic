@@ -1,6 +1,6 @@
 import type Material from "./components/Material.ts";
 
-import { Frame, Image } from "imagescript/mod.ts";
+import type { Frame, Image } from "imagescript/mod.ts";
 
 export type ChannelValue = number;
 
@@ -25,10 +25,10 @@ export type PackIDs = [UUID, UUID, UUID, UUID];
 export type SemverVector = [number, number, number];
 
 export interface TextureSet {
-  heightmap?: string;
-  normal?: string;
+  heightmap?: string | Image;
+  normal?: string | Image;
   color: string | Image | Frame | RGB | RGBA;
-  metalness_emissive_roughness?: string | RGB;
+  metalness_emissive_roughness?: string | RGB | Image;
 }
 
 export type MaterialInstanceFace =
@@ -139,6 +139,13 @@ export interface CreationParameters {
   outputFunctions?: boolean;
   outputPixelArt?: boolean;
   pixelArtSource?: string;
+  merSource?: string;
+  normalSource?: string;
   animationAlignment?: Alignment;
-  slices?: number;
+  slices?: {
+    sliceCount: number;
+    canvasSize: number;
+    textureSize: number;
+    padding?: number;
+  };
 }
