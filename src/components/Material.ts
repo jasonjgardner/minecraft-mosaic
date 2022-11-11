@@ -155,7 +155,7 @@ export default class Material {
 
   get materialInstance() {
     return {
-      "*": {
+      "this_texture": {
         ambient_occlusion: 100 * (this.emissive / 255) < AO_EMISSIVE_THRESHOLD, // Allow AO if block isn't too bright
         face_dimming: !this.emissive,
       },
@@ -166,7 +166,7 @@ export default class Material {
     //const emissivePercentage = Math.floor(this.emissive / 255);
 
     return {
-      "minecraft:unit_cube": Object.freeze({}),
+      //"minecraft:unit_cube": Object.freeze({}),
       "minecraft:material_instances": this.materialInstance,
       //"minecraft:block_light_filter": clampBlockLightFilter(emissivePercentage),
       //"minecraft:light_emission": emissivePercentage,

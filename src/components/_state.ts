@@ -6,13 +6,13 @@ import type {
   PackSizes,
 } from "../types.d.ts";
 import type BlockEntry from "./BlockEntry.ts";
-import { COMPRESSION_LEVEL } from "../constants.ts";
+import { COMPRESSION_LEVEL, TEXTURE_SET_FORMAT_VERSION } from "../constants.ts";
 import { EOL } from "fs/mod.ts";
 import { join } from "path/mod.ts";
 import { JSZip } from "jszip/mod.ts";
-import { Image } from "imagescript/mod.ts";
+import { Frame, Image } from "imagescript/mod.ts";
 import { calculateMipLevels } from "./_resize.ts";
-import { renderBlock, renderBorderSvg } from "./render.ts";
+import { renderBlock } from "./render.ts";
 import { hex2rgb } from "../_utils.ts";
 
 const zip = new JSZip();
@@ -33,11 +33,10 @@ function sanitizeFilename(filepath: string) {
   return filepath.trim().toLowerCase().replaceAll(/\s+/g, "_");
 }
 
-export async function addBlock(block: BlockEntry, size: PackSizes) {
+export function addBlock(block: BlockEntry, size: PackSizes) {
   blocksJson[block.behaviorId] = block.blocksData;
   textureData[block.resourceId] = block.terrainData;
   blocksDirectory.addFile(`${block.id}.json`, block.toString());
-  await addTextureSet(block, size);
 
   // Get translation for each language
   for (const languageKey in languages) {
@@ -45,6 +44,8 @@ export async function addBlock(block: BlockEntry, size: PackSizes) {
       block.language(<LanguageId> languageKey),
     );
   }
+
+  return addTextureSet(block, size);
 }
 
 export function requireTexture(textureFileName: string, contents: Uint8Array) {
@@ -81,9 +82,12 @@ async function addColorTexture(
   size: PackSizes,
 ) {
   const textureName = sanitizeFilename(`${resourceId}.png`);
+
   texturesDirectory.addFile(
     textureName,
-    await renderBlock(typeof color === "string" ? hex2rgb(color) : color, size),
+    await ((color instanceof Image)
+      ? color.encode(COMPRESSION_LEVEL)
+      : renderBlock(typeof color === "string" ? hex2rgb(color) : color, size)),
   );
 
   return textureName.replace(".png", "");
@@ -91,12 +95,22 @@ async function addColorTexture(
 
 export async function addTextureSet(block: BlockEntry, size: PackSizes) {
   const textureSet = { ...block.textureSet };
-  const isColor = (color: string | number[]) =>
-    `${color}`[0] === "#" || Array.isArray(color);
+  const isColor = (color: string | number[] | Image | Frame) =>
+    color && !(color instanceof Image || color instanceof Frame) &&
+    (`${color}`[0] === "#" || Array.isArray(color));
 
   if (isColor(textureSet.color)) {
     // Render and rewrite color texture
-    textureSet.color = await addColorTexture(block, size);
+    textureSet.color = (await addColorTexture(block, size)) ?? textureSet.color;
+  } else if (
+    textureSet.color instanceof Image || textureSet.color instanceof Frame
+  ) {
+    // Add color texture
+    texturesDirectory.addFile(
+      sanitizeFilename(`${block.resourceId}.png`),
+      await textureSet.color.resize(size, size).encode(COMPRESSION_LEVEL),
+    );
+    textureSet.color = block.resourceId;
   } else {
     await requireMaterialAsset(`${textureSet.color}`, size);
   }
@@ -117,7 +131,7 @@ export async function addTextureSet(block: BlockEntry, size: PackSizes) {
   return texturesDirectory.addFile(
     sanitizeFilename(`${block.resourceId}.texture_set.json`),
     JSON.stringify({
-      format_version: "1.16.100",
+      format_version: TEXTURE_SET_FORMAT_VERSION,
       "minecraft:texture_set": textureSet,
     }),
   );

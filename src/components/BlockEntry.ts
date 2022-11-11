@@ -1,5 +1,6 @@
 import type {
   BlockComponents,
+  IBlockTexture,
   IPermutation,
   LanguageId,
   MinecraftData,
@@ -15,7 +16,6 @@ import {
 import { sprintf } from "fmt/printf.ts";
 import { deepMerge } from "collections/mod.ts";
 import { sanitizeNamespace } from "../_utils.ts";
-import HueBlock from "./blocks/HueBlock.ts";
 import Material from "./Material.ts";
 
 export const labelLanguage: LanguageId = "en_US";
@@ -24,14 +24,21 @@ export default class BlockEntry {
   _namespace!: string;
   _id!: string;
 
-  _hue!: HueBlock;
+  _hue!: IBlockTexture;
 
   _material!: Material;
 
   _permutations?: IPermutation[];
 
   _printable?: boolean;
-  constructor(namespace: string, block: HueBlock, material: Material) {
+
+  _customGeometry?: string;
+
+  constructor(
+    namespace: string,
+    block: IBlockTexture,
+    material: Material,
+  ) {
     this.namespace = namespace;
     this._hue = block;
     this._material = material;
@@ -95,7 +102,10 @@ export default class BlockEntry {
   }
 
   get textureSet(): TextureSet {
-    return deepMerge(this._hue.textureSet, this._material.textureSet);
+    return <TextureSet> deepMerge(
+      this._material.textureSet,
+      this._hue.textureSet,
+    );
   }
 
   get blocksData() {
@@ -182,25 +192,44 @@ export default class BlockEntry {
     );
   }
 
+  get customGeometry(): string | undefined {
+    return this._customGeometry;
+  }
+
+  set customGeometry(modelName: string | undefined) {
+    this._customGeometry = modelName
+      ? modelName.replace(/\.geo\.json$/, "")
+      : undefined;
+  }
+
   get materialInstances() {
     return deepMerge({
-      "*": {
+      "this_texture": {
         texture: this.resourceId,
-        render_method: this._hue.rgba[3] < 255 ? "blend" : "opaque",
+        render_method: this.color.renderMethod,
       },
+      "*": "this_texture",
     }, this._material.materialInstance);
   }
 
   get components() {
-    return deepMerge(
+    const components = deepMerge(
       {
         "minecraft:material_instances": this.materialInstances,
       },
-      deepMerge(this._hue.components, this._material.components),
+      deepMerge(this.color.components, this._material.components),
     );
+
+    if (this.customGeometry) {
+      components["minecraft:geometry"] = this.customGeometry;
+    } else {
+      components["minecraft:unit_cube"] = {};
+    }
+
+    return components;
   }
 
   get translucent() {
-    return this._hue.rgba[3] < 255 && this._material.translucent !== false;
+    return this.color.isTranslucent && this._material.translucent !== false;
   }
 }

@@ -1,5 +1,6 @@
 import type Material from "./components/Material.ts";
-import type HueBlock from "./components/blocks/HueBlock.ts";
+
+import type { Frame, Image } from "imagescript/mod.ts";
 
 export type ChannelValue = number;
 
@@ -24,10 +25,41 @@ export type PackIDs = [UUID, UUID, UUID, UUID];
 export type SemverVector = [number, number, number];
 
 export interface TextureSet {
-  heightmap?: string;
-  normal?: string;
-  color: string | RGB | RGBA;
-  metalness_emissive_roughness?: string | RGB;
+  heightmap?: string | Image;
+  normal?: string | Image;
+  color: string | Image | Frame | RGB | RGBA;
+  metalness_emissive_roughness?: string | RGB | Image;
+}
+
+export type MaterialInstanceFace =
+  | "*"
+  | "up"
+  | "down"
+  | "north"
+  | "south"
+  | "east"
+  | "west";
+
+export type MaterialInstance = {
+  [face in MaterialInstanceFace]?: {
+    texture: string;
+    render_method: "opaque" | "double_sided" | "blend" | "alpha_test";
+    face_dimming: boolean;
+    ambient_occlusion: boolean;
+  };
+};
+
+export interface IBlockTexture {
+  name: string;
+  title(lang: LanguageId): string;
+  components: MinecraftData;
+  textureSet: TextureSet | Omit<TextureSet, "color">;
+  texture: Image | Frame;
+  rgba: RGBA;
+  hex: string;
+  isTranslucent: boolean;
+  isTransparent: boolean;
+  renderMethod: "opaque" | "blend" | "alpha_test";
 }
 
 export interface BlockComponents {
@@ -103,10 +135,18 @@ export interface CreationParameters {
   namespace: string;
   pixelArtSourceName?: string;
   description?: string;
-  blockColors?: HueBlock[];
+  blocks?: Array<IBlockTexture>;
   materialOptions?: Material[];
   outputFunctions?: boolean;
   outputPixelArt?: boolean;
   pixelArtSource?: string;
+  merSource?: string;
+  normalSource?: string;
   animationAlignment?: Alignment;
+  slices?: {
+    sliceCount: number;
+    canvasSize: number;
+    textureSize: number;
+    padding?: number;
+  };
 }

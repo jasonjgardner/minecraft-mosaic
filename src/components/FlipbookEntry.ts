@@ -1,6 +1,5 @@
 import type Material from "./Material.ts";
-import type HueBlock from "./blocks/HueBlock.ts";
-import type { LanguageId, RGB } from "../types.d.ts";
+import type { IBlockTexture, LanguageId, RGB } from "../types.d.ts";
 import BlockEntry from "./BlockEntry.ts";
 
 export function formatFlipbookName(color: string, material?: string): string {
@@ -10,7 +9,11 @@ export function formatFlipbookName(color: string, material?: string): string {
 
 export default class FlipbookEntry extends BlockEntry {
   _base!: string;
-  constructor(namespace: string, block: HueBlock, material: Material) {
+  constructor(
+    namespace: string,
+    block: IBlockTexture,
+    material: Material,
+  ) {
     super(
       namespace,
       block,

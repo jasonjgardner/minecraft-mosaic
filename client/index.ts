@@ -5,45 +5,53 @@ import { RGBA } from "../src/types.d.ts";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/gif", "image/png"];
 const MAX_SIZE = 64;
+const MAX_WIDTH = 512;
 
-function collectColors(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  const colors: RGBA[] = [];
+// function collectColors(ctx: CanvasRenderingContext2D, x: number, y: number) {
+//   const colors: RGBA[] = [];
 
-  const imageData = ctx?.getImageData(0, 0, x, y);
+//   const imageData = ctx?.getImageData(0, 0, x, y);
 
-  const data = imageData ? imageData.data : null;
-  const len = Math.min(MAX_SIZE * MAX_SIZE * 4, data?.length || 0);
+//   const data = imageData ? imageData.data : null;
+//   const len = Math.min(MAX_SIZE * MAX_SIZE * 4, data?.length || 0);
 
-  if (!data || !len) {
-    throw Error("Invalid image data");
-  }
+//   if (!data || !len) {
+//     throw Error("Invalid image data");
+//   }
 
-  for (let itr = 0; itr < len; itr += 4) {
-    const alpha = data[itr + 3] / 255;
+//   for (let itr = 0; itr < len; itr += 4) {
+//     const alpha = data[itr + 3] / 255;
 
-    if (alpha < 0.5) {
-      continue;
-    }
+//     if (alpha < 0.5) {
+//       continue;
+//     }
 
-    const rgba: RGBA = [data[itr], data[itr + 1], data[itr + 2], alpha];
+//     const rgba: RGBA = [data[itr], data[itr + 1], data[itr + 2], alpha];
 
-    colors.push(rgba);
-  }
+//     colors.push(rgba);
+//   }
 
-  return colors;
-}
+//   return colors;
+// }
 
 function resizeImageInput(
   img: HTMLImageElement,
   canvas: HTMLCanvasElement,
-): RGBA[] {
+  maxWidth: number,
+) {
   const originalWidth = img.naturalWidth;
   const originalHeight = img.naturalHeight;
 
   const aspectRatio = originalWidth / originalHeight;
 
-  let newWidth = Math.min(MAX_SIZE, originalWidth);
+  let newWidth = Math.min(Math.max(1, Math.ceil(maxWidth)), originalWidth);
   let newHeight = newWidth / aspectRatio;
+
+  // Don't enlarge some images
+  if (newWidth > originalWidth && newWidth > maxWidth) {
+    newWidth = originalWidth;
+    newHeight = originalHeight;
+  }
 
   canvas.width = newWidth;
   canvas.height = newHeight;
@@ -54,13 +62,13 @@ function resizeImageInput(
 
   ctx?.drawImage(img, 0, 0, newWidth, newHeight);
 
-  const colors = [];
+  // const colors = [];
 
-  if (ctx) {
-    colors.push(...collectColors(ctx, newWidth, newHeight));
-  }
+  // if (ctx) {
+  //   colors.push(...collectColors(ctx, newWidth, newHeight));
+  // }
 
-  return colors;
+  // return colors;
 }
 
 function processImageInput(
@@ -95,6 +103,12 @@ globalThis.addEventListener("DOMContentLoaded", () => {
   const previewCanvas = document.getElementById(
     "preview",
   ) as HTMLCanvasElement;
+  const merPreviewCanvas = document.getElementById(
+    "mer-preview",
+  ) as HTMLCanvasElement;
+  const normalPreviewCanvas = document.getElementById(
+    "normal-preview",
+  ) as HTMLCanvasElement;
   const form: HTMLFormElement = document.forms.namedItem(
     "config",
   ) as HTMLFormElement;
@@ -105,23 +119,31 @@ globalThis.addEventListener("DOMContentLoaded", () => {
   const imgValue: HTMLInputElement = document.getElementById(
     "img_value",
   ) as HTMLInputElement;
+  const merValue: HTMLInputElement = document.getElementById(
+    "mer_value",
+  ) as HTMLInputElement;
+  const normalValue: HTMLInputElement = document.getElementById(
+    "normal_value",
+  ) as HTMLInputElement;
+  const sliceSizeSelect: HTMLSelectElement = document.getElementById(
+    "slice-canvas-size",
+  ) as HTMLSelectElement;
 
   downloadLink.hidden = true;
+
+  function revokeDownload() {
+    URL.revokeObjectURL(downloadLink.href);
+    downloadLink.hidden = true;
+    downloadLink.classList.remove("flex");
+    downloadLink.classList.add("hidden");
+  }
 
   async function onInput() {
     if (!imageInput || !imageInput.files?.length) {
       throw Error("Failed retrieving image preview");
     }
 
-    downloadLink.href = "#";
-    downloadLink.classList.remove("flex");
-    downloadLink.classList.add("hidden");
-
-    const img = await processImageInput(
-      imageInput.files[0],
-    );
-
-    img.classList.add("image-preview");
+    revokeDownload();
 
     for (const k in previewContainer.children) {
       const child = previewContainer.children[k];
@@ -134,7 +156,52 @@ globalThis.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    if (imageInput.files[0].name.endsWith(".gif")) {
+    const imageFiles = Array.from(imageInput.files);
+
+    const merFile = imageFiles.find(({ name }) => name.endsWith("_mer.png"));
+    const normalFile = imageFiles.find(({ name }) =>
+      name.endsWith("_normal.png")
+    );
+
+    const outputSize = Math.min(
+      MAX_WIDTH,
+      Math.max(16, parseInt(sliceSizeSelect.value, 10)),
+    );
+
+    if (merFile) {
+      const mer = await processImageInput(merFile);
+      merPreviewCanvas.classList.remove("hidden");
+      resizeImageInput(
+        mer,
+        merPreviewCanvas,
+        outputSize,
+      );
+      merValue.value = merPreviewCanvas.toDataURL();
+    }
+
+    if (normalFile) {
+      const normal = await processImageInput(normalFile);
+      normalPreviewCanvas.classList.remove("hidden");
+      resizeImageInput(
+        normal,
+        normalPreviewCanvas,
+        outputSize,
+      );
+      normalValue.value = normalPreviewCanvas.toDataURL();
+    }
+
+    const imageFile = imageFiles.find(({ name }) =>
+      name !== merFile?.name && name !== normalFile?.name &&
+      (name.endsWith(".png") || name.endsWith(".gif"))
+    );
+
+    if (!imageFile) {
+      throw Error("Failed retrieving image preview");
+    }
+
+    const img = await processImageInput(imageFile);
+
+    if (imageFile?.name.endsWith(".gif")) {
       previewContainer.appendChild(img);
       previewCanvas.classList.add("hidden");
       imgValue.value = img.src;
@@ -142,7 +209,11 @@ globalThis.addEventListener("DOMContentLoaded", () => {
     }
 
     previewCanvas.classList.remove("hidden");
-    resizeImageInput(img, previewCanvas);
+    resizeImageInput(
+      img,
+      previewCanvas,
+      outputSize,
+    );
     imgValue.value = previewCanvas.toDataURL();
   }
 
@@ -163,6 +234,9 @@ globalThis.addEventListener("DOMContentLoaded", () => {
           ) => value).join(","),
         );
 
+        data.set("slice_count", form["slice-count"].value);
+        data.set("slices", sliceSizeSelect.value);
+
         data.set("size", form.pack_size.value || 16);
         data.delete("pack_size");
         data.set("img_name", form.img_name.value || "input");
@@ -172,7 +246,17 @@ globalThis.addEventListener("DOMContentLoaded", () => {
         data.delete("img_value");
         data.delete(imageInput.name);
 
-        const ns = data.get("namespace") ?? "generated";
+        if (form.mer_value.value) {
+          data.set("mer", form.mer_value.value);
+          data.delete("mer_value");
+        }
+
+        if (form.normal_value.value) {
+          data.set("normal", form.normal_value.value);
+          data.delete("normal_value");
+        }
+
+        const ns = data.get("namespace") ?? form.namespace.value ?? "generated";
 
         try {
           const res = await fetch(form.action, {
@@ -187,7 +271,7 @@ globalThis.addEventListener("DOMContentLoaded", () => {
           downloadLink.classList.add("flex");
           downloadLink.hidden = false;
           downloadLink.classList.remove("hidden");
-          downloadLink.download = `${ns ? ns : "generated"}.mcaddon`;
+          downloadLink.download = `${ns}.mcaddon`;
         } catch (err) {
           console.error(err);
         }
@@ -209,6 +293,6 @@ globalThis.addEventListener("DOMContentLoaded", () => {
   }
 
   downloadLink.addEventListener("click", function initiateDownload() {
-    setTimeout(() => URL.revokeObjectURL(downloadLink.href), 500);
+    setTimeout(() => revokeDownload(), 1000);
   });
 });

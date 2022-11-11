@@ -1,12 +1,11 @@
 //import type Material from "./Material.ts";
 import type { Alignment, Axis, RGB, RGBA } from "../types.d.ts";
-//import { stringify } from "https://esm.sh/nbt-ts";
+
 import { Frame, GIF, Image } from "imagescript/mod.ts";
 import { basename } from "path/mod.ts";
 import { sprintf } from "fmt/printf.ts";
 import { EOL } from "fs/mod.ts";
 import {
-  BLOCK_ENGINE_VERSION,
   CHUNK_SIZE,
   DEFAULT_PRINT_BLOCK,
   DEFAULT_PRINT_CHUNKS,
@@ -17,47 +16,17 @@ import {
   TRANSPARENT_PRINT_BLOCK_THRESHOLD,
 } from "../constants.ts";
 import BlockEntry from "./BlockEntry.ts";
-import { addToBehaviorPack } from "./_state.ts";
-import { rgbaMatch } from "../_utils.ts";
+import { axes, rgbaMatch } from "../_utils.ts";
+import { HueBlock, ImageBlock } from "./blocks/index.ts";
+import Addon from "./Addon.ts";
+import { createStructureTag } from "./structure.ts";
 
-const axises: [Axis, Axis, Axis] = ["x", "y", "z"];
 const DIR_FUNCTIONS = `functions/${FUNCTIONS_NAMESPACE}`;
 
 interface PrinterResult {
   label: string;
   axis: Axis;
   func: string;
-}
-
-type NbtData = { [key: string]: number | boolean | string };
-
-type Coordinates = [number, number, number];
-
-interface BlockPaletteData {
-  version: number;
-  name: string;
-  states: NbtData;
-}
-
-interface IMinecraftStructure {
-  format_version: 1;
-  size: Coordinates;
-  structure_world_origin: Coordinates;
-
-  structure: {
-    block_indices: Array<Coordinates>;
-    entities?: Array<{ [k: string]: string | number }>;
-    palette: {
-      [k: string]: {
-        block_palette?: [BlockPaletteData[], NbtData[] | undefined];
-        block_position_data: {
-          [idx: number]: {
-            block_entity_data: NbtData;
-          };
-        };
-      };
-    };
-  };
 }
 
 function colorDistance(color1: RGB, color2: RGB) {
@@ -113,65 +82,8 @@ function writeFill(
   } 0 keep`;
 }
 
-export function constructDecoded(
-  frames: GIF | Array<Image | Frame>,
-  palette: BlockEntry[],
-) {
-  const structureTag: IMinecraftStructure = {
-    format_version: 1,
-    size: [1, 1, 1],
-    structure_world_origin: [0, 0, 0],
-    structure: {
-      block_indices: [[0, 0, 0]],
-      entities: [],
-      palette: {
-        default: {
-          block_position_data: {},
-        },
-      },
-    },
-  };
-
-  const frameCount = frames.length;
-  const structureBlockPalette: BlockPaletteData[] = [];
-  const positionData = [];
-  const layer = [];
-  let idx = 0;
-
-  for (let z = 0; z < frameCount; z++) {
-    const img = frames[z];
-
-    for (const [x, y, c] of img.iterateWithColors()) {
-      layer.push([z, y, x]);
-
-      structureBlockPalette.push({
-        version: BLOCK_ENGINE_VERSION,
-        name: getBlockIdByColor(
-          <RGBA> Image.colorToRGBA(c),
-          palette,
-        ),
-        states: {},
-      });
-
-      positionData.push([idx, { block_entity_data: {} }]);
-
-      idx++;
-    }
-  }
-
-  structureTag.structure.palette.default.block_palette = [
-    structureBlockPalette,
-    [],
-  ];
-  structureTag.structure.palette.default.block_position_data = Object
-    .fromEntries(
-      positionData,
-    );
-
-  return structureTag;
-}
-
 function printDecoded(
+  addon: Addon,
   name: string,
   img: Image | Frame,
   palette: BlockEntry[],
@@ -195,7 +107,7 @@ function printDecoded(
         { translucent, material: { label: entryLabel } }: BlockEntry,
       ) => translucent || label === entryLabel);
 
-      return axises.map((axis): PrinterResult => {
+      return axes.map((axis): PrinterResult => {
         const func: string[] = [];
 
         for (const [x, y, c] of img.iterateWithColors()) {
@@ -218,7 +130,7 @@ function printDecoded(
         const filename = sprintf("%s_%s_%s.mcfunction", name, label, axis);
         const filePath = `${dest}/${filename}`;
 
-        addToBehaviorPack(filePath, func.join(EOL.CRLF));
+        addon.addToBehaviorPack(filePath, func.join(EOL.CRLF));
 
         return { label, axis, func: filename };
       });
@@ -230,7 +142,7 @@ function printDecoded(
   return fns.flat();
 }
 
-function getBlockIdByColor(color: RGBA, palette: BlockEntry[]) {
+export function getBlockIdByColor(color: RGBA, palette: BlockEntry[]) {
   const fuzzRange = [255 / 10, 255 / 10, 255 / 10, 255 / 50];
   const exact = palette.find(({ color: { rgba } }) =>
     rgbaMatch(color, rgba, fuzzRange)
@@ -287,6 +199,7 @@ function getAlignment(
 }
 
 export function pixelPrinter(
+  addon: Addon,
   name: string,
   imageData: Image | GIF,
   palette: BlockEntry[],
@@ -314,6 +227,10 @@ export function pixelPrinter(
   const groupFn: Array<PrinterResult[]> = [];
   const alignGroup = options.alignment || "b2b";
 
+  const blockPalette = palette.filter(({ textureSet: { color } }) =>
+    color instanceof HueBlock
+  );
+
   for (let itr = 0; itr < frameCount; itr++) {
     const frame = frames[itr];
     let dest = DIR_FUNCTIONS;
@@ -323,11 +240,13 @@ export function pixelPrinter(
       fileName = sprintf("%s_%02s", name, `${idx}`);
       dest += `/${name}`;
     }
+
     try {
       const res = printDecoded(
+        addon,
         fileName,
         frame,
-        palette,
+        blockPalette,
         getAlignment(alignGroup, {
           idx,
           frame,
@@ -348,10 +267,11 @@ export function pixelPrinter(
   }
 
   // GIFs with "none" alignment get delay to animate fill
-  createParentFunction(name, groupFn, size);
+  createParentFunction(addon, name, groupFn, size);
 }
 
 function createParentFunction(
+  addon: Addon,
   name: string,
   groupFn: Array<PrinterResult[]>,
   _size: number,
@@ -380,9 +300,47 @@ function createParentFunction(
     const structureId = `${name}_${materialPositionKey}`;
     //fns[materialPositionKey] = `structure save ~ ~ ~ ~${size} ~${size} `
 
-    addToBehaviorPack(
+    addon.addToBehaviorPack(
       `${DIR_FUNCTIONS}/${structureId}.mcfunction`,
       fns[materialPositionKey].join(EOL.CRLF),
     );
   }
+}
+
+export function positionPrinter(
+  addon: Addon,
+  name: string,
+  palette: BlockEntry[],
+) {
+  // Split functions into groups by their alignment
+
+  axes.forEach((axis) => {
+    const fns: PrinterResult[] = [];
+    palette.forEach(({ color, behaviorId, material: { label } }) => {
+      if (!(color instanceof ImageBlock)) {
+        return;
+      }
+
+      const fillWith = color.isTransparent
+        ? TRANSPARENT_PRINT_BLOCK
+        : behaviorId;
+      const [x, y, z] = color.orientation(axis);
+
+      fns.push({
+        axis,
+        label,
+        func: `fill ~${x} ~-${y} ~${z} ~${x} ~-${y} ~${z} ${fillWith} 0 keep`,
+      });
+    });
+
+    fns.map(({ label }) => {
+      const structureId = `${name}_${label}_${axis}`;
+      addon.addToBehaviorPack(
+        `${DIR_FUNCTIONS}/${structureId}.mcfunction`,
+        fns.filter(({ label: l }) => l === label).map(({ func }) => func).join(
+          EOL.CRLF,
+        ),
+      );
+    });
+  });
 }

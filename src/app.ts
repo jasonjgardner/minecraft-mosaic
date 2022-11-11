@@ -1,9 +1,11 @@
 import { Alignment, PackSizes } from "./types.d.ts";
 import {
   ART_SOURCE_ID,
+  CHUNK_SIZE,
   DEFAULT_MATERIAL_ID,
   DEFAULT_NAMESPACE,
   DEFAULT_PACK_SIZE,
+  DEFAULT_SLICE_SIZE,
 } from "./constants.ts";
 import { Application, Router } from "oak/mod.ts";
 //import { getNearestPackSize } from "./components/_resize.ts";
@@ -51,12 +53,23 @@ router
 
           pixelArtSource: data.fields.img,
           pixelArtSourceName: data.fields.img_name ?? ART_SOURCE_ID,
+          merSource: data.fields.mer,
+          normalSource: data.fields.normal,
           namespace,
           description: data.fields.description ?? "Generated pixel art palette",
           animationAlignment: <Alignment> data.fields.alignment ?? "e2e",
+          // FIXME: Slices count interferes with size parameter
+          slices: {
+            sliceCount: parseInt(data.fields.slice_count ?? "1", 10),
+            canvasSize: parseInt(data.fields.slices, 10) || DEFAULT_SLICE_SIZE,
+            textureSize: <PackSizes> parseInt(
+              data.fields.size ?? `${DEFAULT_PACK_SIZE}`,
+              10,
+            ) || DEFAULT_PACK_SIZE,
+          },
         }, data.fields.materials ?? DEFAULT_MATERIAL_ID);
 
-        const responseData =  new Uint8Array(await blob.arrayBuffer());
+        const responseData = new Uint8Array(await blob.arrayBuffer());
 
         context.response.status = 200;
         context.response.headers.set(
@@ -65,6 +78,8 @@ router
         );
         context.response.type = "application/octet-stream";
         context.response.body = responseData;
+
+        // TODO: Cache responseData or store locally
       }
     },
   );
@@ -89,7 +104,7 @@ app.use(function usePageNotFoundRoute(context) {
 });
 
 app.addEventListener("listen", () => {
-  console.log("🌈 http://localhost:8000 🪄");
+  console.log("🌈 http://localhost:8000 🪄🎨");
 });
 
 await app.listen({ port: 8000 });

@@ -1,10 +1,15 @@
 import type { ReleaseType } from "semver/mod.ts";
 import { PackSizes } from "./types.d.ts";
 
+export const RUNNING_LOCALLY = !Deno.env.get("DENO_DEPLOYMENT_ID") &&
+  !Deno.env.get("GITHUB_ACTIONS");
+
 export const MIN_PACK_SIZE: PackSizes = 16;
 export const MAX_PACK_SIZE: PackSizes = 256;
 
 export const DEFAULT_PACK_SIZE: PackSizes = MIN_PACK_SIZE;
+
+export const DEFAULT_SLICE_SIZE = 16;
 
 export const DEFAULT_LICENSE = "GPL-3.0-or-later";
 
@@ -15,7 +20,7 @@ export const BEHAVIOR_BLOCK_FORMAT_VERSION = "1.19.20";
 
 export const TEXTURE_SET_FORMAT_VERSION = "1.16.100";
 
-export const BLOCK_ENGINE_VERSION = 17825806;
+export const BLOCK_ENGINE_VERSION = 17959425;
 
 export const DEFAULT_RELEASE_TYPE: ReleaseType = "prerelease";
 
@@ -34,7 +39,7 @@ export const AO_EMISSIVE_THRESHOLD = 50;
  */
 export const DEFAULT_BLOCK_SOUND = "dirt";
 
-export const MAX_FRAMES = 10;
+export const MAX_FRAMES = RUNNING_LOCALLY ? 16 : 10;
 export const FUNCTIONS_NAMESPACE = "print";
 
 export const MIN_PALETTE_LENGTH = 1;
@@ -68,6 +73,11 @@ export const TRANSPARENT_PRINT_BLOCK = "minecraft:air";
 
 export const TRANSPARENT_PRINT_BLOCK_THRESHOLD = 0.5;
 
+/**
+ * Minimum pixel alpha value to allow in palette
+ */
+export const MIN_ALPHA = Math.round(255 * TRANSPARENT_PRINT_BLOCK_THRESHOLD);
+
 export const TARGET_VERSION: [number, number, number] = [1, 19, 2];
 
 export const BASE_GAME_VERSION: [number, number, number] = TARGET_VERSION;
@@ -100,6 +110,3 @@ export const COMPRESSION_LEVEL = 0;
 export const SUPPORTED_EXTENSIONS = ["jpg", "jpeg", "gif", "png"];
 
 export const DEFAULT_MATERIAL_ID = "plastic";
-
-export const RUNNING_LOCALLY = !Deno.env.get("DENO_DEPLOYMENT_ID") &&
-  !Deno.env.get("GITHUB_ACTIONS");
