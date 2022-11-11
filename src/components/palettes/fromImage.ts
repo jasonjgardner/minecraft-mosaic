@@ -8,7 +8,7 @@ import { GIF, Image } from "imagescript/mod.ts";
 import HueBlock from "../blocks/HueBlock.ts";
 import ImageBlock from "../blocks/ImageBlock.ts";
 import { handlePaletteInput, rgbaMatch } from "../../_utils.ts";
-import { CHUNK_SIZE, DEFAULT_SLICE_SIZE } from "../../constants.ts";
+import { CHUNK_SIZE, DEFAULT_SLICE_SIZE, MAX_FRAMES } from "../../constants.ts";
 
 /**
  * Minimum pixel alpha value to allow in palette
@@ -29,11 +29,6 @@ const BOUNDARY_X = 256;
  * Maximum height
  */
 const BOUNDARY_Y = 256;
-
-/**
- * Maximum number of GIF frames to process into palette
- */
-const MAX_FRAME_DEPTH = 10;
 
 function createFlipbooks(blocks: ImageBlock[]) {
   const blockSource = blocks[0].texture;
@@ -75,11 +70,11 @@ export async function getSlices(
   normalSource?: string,
 ): Promise<ImageBlock[]> {
   const input = await handlePaletteInput(src);
+  const isGif = input instanceof GIF;
+  const frames = (isGif ? input : [input]);
 
-  const frames = (input instanceof GIF ? input : [input]);
-
-  if (frames.length > MAX_FRAME_DEPTH) {
-    frames.length = MAX_FRAME_DEPTH;
+  if (frames.length > MAX_FRAMES) {
+    frames.length = MAX_FRAMES;
   }
   const mer = merSource
     ? ((await handlePaletteInput(merSource)) as Image)
@@ -121,6 +116,7 @@ export async function getSlices(
             en_US: `X${positionXitr} Y${positionYitr} Z${zItr}`,
             en_GB: `X${positionXitr} Y${positionYitr} Zed${zItr}`,
           },
+          isGif ? "alpha_test" : undefined,
         );
 
         if (zItr < 1 && mer) {
@@ -170,7 +166,7 @@ export async function getPalette(
   const frameCount = frames.length;
   const fuzzRange = [255 / 15, 255 / 15, 255 / 15, 255 / 50];
 
-  let itr = Math.min(frameCount, MAX_FRAME_DEPTH);
+  let itr = Math.min(frameCount, MAX_FRAMES);
 
   // Collect colors from each frame
   while (itr--) {

@@ -13,6 +13,7 @@ import BlockEntry from "./BlockEntry.ts";
 import { pixelPrinter, positionPrinter } from "./ImagePrinter.ts";
 import { fetchImage, handlePaletteInput } from "../_utils.ts";
 import Addon from "./Addon.ts";
+import { constructDecoded, constructPositioned } from "./structure.ts";
 
 export function getPrintablePalette(palette: BlockEntry[]) {
   const filtered = palette.filter(
@@ -102,12 +103,13 @@ export default async function printer(
   const name = (artSrcId ?? ART_SOURCE_ID).replace(/\s+/g, "_");
 
   positionPrinter(addon, name, palette);
+  constructPositioned(addon, name, palette);
 
   if (artSrc) {
     try {
       const img = await handlePaletteInput(artSrc);
 
-      //constructDecoded(name, Array.isArray(img) ? img : [img], palette);
+      constructDecoded(addon, name, Array.isArray(img) ? img : [img], palette);
 
       const chunks = Math.min(
         MAX_PRINT_CHUNKS,
