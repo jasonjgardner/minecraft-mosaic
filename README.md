@@ -1,4 +1,4 @@
-# Minecraft Mosiac Generator
+# Minecraft Mosaic Generator
 __Convert an image into an add-on containing custom blocks and mosaic functions__
 
 🚧
