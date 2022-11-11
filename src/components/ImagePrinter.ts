@@ -16,11 +16,11 @@ import {
   TRANSPARENT_PRINT_BLOCK_THRESHOLD,
 } from "../constants.ts";
 import BlockEntry from "./BlockEntry.ts";
-import { rgbaMatch } from "../_utils.ts";
+import { axes, rgbaMatch } from "../_utils.ts";
 import { HueBlock, ImageBlock } from "./blocks/index.ts";
 import Addon from "./Addon.ts";
+import { createStructureTag } from "./structure.ts";
 
-const axises: [Axis, Axis, Axis] = ["x", "y", "z"];
 const DIR_FUNCTIONS = `functions/${FUNCTIONS_NAMESPACE}`;
 
 interface PrinterResult {
@@ -107,7 +107,7 @@ function printDecoded(
         { translucent, material: { label: entryLabel } }: BlockEntry,
       ) => translucent || label === entryLabel);
 
-      return axises.map((axis): PrinterResult => {
+      return axes.map((axis): PrinterResult => {
         const func: string[] = [];
 
         for (const [x, y, c] of img.iterateWithColors()) {
@@ -314,7 +314,7 @@ export function positionPrinter(
 ) {
   // Split functions into groups by their alignment
 
-  axises.forEach((axis) => {
+  axes.forEach((axis) => {
     const fns: PrinterResult[] = [];
     palette.forEach(({ color, behaviorId, material: { label } }) => {
       if (!(color instanceof ImageBlock)) {

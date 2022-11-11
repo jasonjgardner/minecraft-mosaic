@@ -31,6 +31,9 @@ export default class BlockEntry {
   _permutations?: IPermutation[];
 
   _printable?: boolean;
+
+  _customGeometry?: string;
+
   constructor(
     namespace: string,
     block: IBlockTexture,
@@ -189,34 +192,41 @@ export default class BlockEntry {
     );
   }
 
+  get customGeometry(): string | undefined {
+    return this._customGeometry;
+  }
+
+  set customGeometry(modelName: string | undefined) {
+    this._customGeometry = modelName
+      ? modelName.replace(/\.geo\.json$/, "")
+      : undefined;
+  }
+
   get materialInstances() {
-    const render_method = this.color.isTranslucent ? "blend" : "opaque";
     return deepMerge({
       "this_texture": {
         texture: this.resourceId,
-        render_method,
-      },
-      "reversed_texture": {
-        texture: `${this.resourceId}_reversed`,
-        render_method,
+        render_method: this.color.renderMethod,
       },
       "*": "this_texture",
-      "north": "this_texture",
-      "east": "reversed_texture",
-      "south": "reversed_texture",
-      "west": "this_texture",
-      "up": "this_texture",
-      "down": "reversed_texture",
     }, this._material.materialInstance);
   }
 
   get components() {
-    return deepMerge(
+    const components = deepMerge(
       {
         "minecraft:material_instances": this.materialInstances,
       },
       deepMerge(this.color.components, this._material.components),
     );
+
+    if (this.customGeometry) {
+      components["minecraft:geometry"] = this.customGeometry;
+    } else {
+      components["minecraft:unit_cube"] = {};
+    }
+
+    return components;
   }
 
   get translucent() {

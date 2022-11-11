@@ -59,6 +59,7 @@ export interface IBlockTexture {
   hex: string;
   isTranslucent: boolean;
   isTransparent: boolean;
+  renderMethod: "opaque" | "blend" | "alpha_test";
 }
 
 export interface BlockComponents {

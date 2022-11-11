@@ -6,8 +6,7 @@ import type {
   MultiLingual,
   RGBA,
 } from "../../types.d.ts";
-import { Frame, Image } from "imagescript/mod.ts";
-import { rotate180 } from "imagescript/v2/ops/rotate.mjs";
+import { decode, Frame, Image } from "imagescript/mod.ts";
 import { labelLanguage } from "../BlockEntry.ts";
 import { hexValue } from "../../_utils.ts";
 import { sprintf } from "fmt/printf.ts";
@@ -28,11 +27,14 @@ export default class ImageBlock implements IBlockTexture {
   _offset: [number, number];
 
   _size!: number;
+
+  _renderMethod: "alpha_test" | "blend" | "opaque" = "opaque";
   constructor(
     img: Image | Frame,
     offset: [number, number, number],
     position?: Coordinates,
     name?: MultiLingual,
+    renderMethod?: "alpha_test" | "blend" | "opaque",
   ) {
     this._position = <Coordinates> position?.slice(
       0,
@@ -50,6 +52,10 @@ export default class ImageBlock implements IBlockTexture {
 
     this._offset = [offset[0], offset[1]];
     this._size = offset[2];
+
+    this._renderMethod = renderMethod ?? this.isTranslucent
+      ? "blend"
+      : "opaque";
   }
 
   /**
@@ -81,6 +87,14 @@ export default class ImageBlock implements IBlockTexture {
 
     // When going east to west, x, y and z remain the same
     return this.position;
+  }
+
+  get renderMethod() {
+    return this._renderMethod;
+  }
+
+  set renderMethod(value: "alpha_test" | "blend" | "opaque") {
+    this._renderMethod = value;
   }
 
   set mer(img: Image | undefined) {
@@ -150,7 +164,7 @@ export default class ImageBlock implements IBlockTexture {
     for (const [, , c] of this._img.iterateWithColors()) {
       const color = Image.colorToRGBA(c);
 
-      if (color[3] < 255) {
+      if (color[3] < 255 && color[3] > MIN_ALPHA) {
         return true;
       }
     }
@@ -170,23 +184,5 @@ export default class ImageBlock implements IBlockTexture {
       }
     }
     return true;
-  }
-
-  flipTextures() {
-    const { mer, normal, texture } = this;
-
-    const flip = (img?: Image | Frame) => {
-      if (img) {
-        const flipped = img.clone();
-        rotate180(flipped);
-        return flipped;
-      }
-    };
-
-    return {
-      color: flip(texture),
-      metalness_emissive_roughness: flip(mer),
-      normal: flip(normal),
-    };
   }
 }

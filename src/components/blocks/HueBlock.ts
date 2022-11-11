@@ -15,13 +15,25 @@ import { Image } from "imagescript/mod.ts";
 export default class HueBlock implements IBlockTexture {
   _color!: RGBA;
   _name?: MultiLingual;
-  constructor(color: RGB | RGBA, name?: MultiLingual) {
+
+  _renderMethod: "alpha_test" | "blend" | "opaque" = "opaque";
+  constructor(
+    color: RGB | RGBA,
+    name?: MultiLingual,
+    renderMethod?: "alpha_test" | "blend" | "opaque",
+  ) {
     if (color.length < 4) {
       color[3] = 255;
     }
 
     this._color = <RGBA> color;
     this._name = name;
+
+    this.renderMethod = renderMethod ?? this.isTransparent
+      ? "alpha_test"
+      : this.isTranslucent
+      ? "blend"
+      : "opaque";
   }
 
   title(lang: LanguageId = "en_US") {
@@ -63,6 +75,14 @@ export default class HueBlock implements IBlockTexture {
           6,
         ),
     };
+  }
+
+  set renderMethod(value: "alpha_test" | "blend" | "opaque") {
+    this._renderMethod = value;
+  }
+
+  get renderMethod() {
+    return this._renderMethod;
   }
 
   get isTranslucent() {

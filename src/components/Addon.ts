@@ -137,7 +137,7 @@ export default class Addon {
     );
   }
 
-  addBlock(block: BlockEntry, size: PackSizes) {
+  async addBlock(block: BlockEntry, size: PackSizes) {
     this._blocksJson[block.behaviorId] = block.blocksData;
     this._textureData[block.resourceId] = block.terrainData;
     this.behaviorPack.folder("blocks").addFile(
@@ -152,7 +152,42 @@ export default class Addon {
       );
     }
 
+    await this.requireGeometryAsset(block);
+
     return this.addTextureSet(block, size);
+  }
+
+  async requireGeometryAsset({ components }: BlockEntry) {
+    if (typeof components["minecraft:geometry"] !== "string") {
+      return;
+    }
+
+    try {
+      const meshName = components["minecraft:geometry"].replace(
+        /^geometry\./i,
+        "",
+      );
+      const fileName = `${meshName}.geo.json`;
+
+      if (this.resourcePack.folder("models/blocks").file(fileName) !== null) {
+        console.info(`Geometry "${fileName}" already exists in addon archive.`);
+      }
+
+      const filePath = join(Deno.cwd(), "src", "assets", "materials", fileName);
+
+      const contents = await Deno.readTextFile(filePath);
+      const json = JSON.parse(contents); // Read and minify contents
+
+      return this.resourcePack.folder("models/blocks").addFile(
+        fileName,
+        JSON.stringify(json),
+      );
+    } catch (err) {
+      console.error("Failed adding geometry: %s", err);
+      throw new Error(
+        `Geometry asset "${components["minecraft:geometry"]}" not found`,
+      );
+    }
   }
 
   async requireMaterialAsset(name: string, size: PackSizes) {
