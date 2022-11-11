@@ -131,14 +131,19 @@ globalThis.addEventListener("DOMContentLoaded", () => {
 
   downloadLink.hidden = true;
 
+  function revokeDownload() {
+    URL.revokeObjectURL(downloadLink.href);
+    downloadLink.hidden = true;
+    downloadLink.classList.remove("flex");
+    downloadLink.classList.add("hidden");
+  }
+
   async function onInput() {
     if (!imageInput || !imageInput.files?.length) {
       throw Error("Failed retrieving image preview");
     }
 
-    downloadLink.href = "#";
-    downloadLink.classList.remove("flex");
-    downloadLink.classList.add("hidden");
+    revokeDownload();
 
     for (const k in previewContainer.children) {
       const child = previewContainer.children[k];
@@ -288,11 +293,6 @@ globalThis.addEventListener("DOMContentLoaded", () => {
   }
 
   downloadLink.addEventListener("click", function initiateDownload() {
-    setTimeout(() => {
-      URL.revokeObjectURL(downloadLink.href);
-      downloadLink.hidden = true;
-      downloadLink.classList.remove("flex");
-      downloadLink.classList.add("hidden");
-    }, 500);
+    setTimeout(() => revokeDownload(), 1000);
   });
 });
